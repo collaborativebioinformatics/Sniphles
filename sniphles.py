@@ -10,10 +10,10 @@ import os
 
 class PhaseBlock(object):
     def __init__(self, id, start, end, phase, status):
-        self.id = id
-        self.start = start
-        self.end = end
-        self.phase = phase
+        self.id = id  # identifier of the phase block in the BAM
+        self.start = start  # first coordinate of a read in the phase block
+        self.end = end  # last coordinate of a read in the phase block
+        self.phase = phase  # '1' or '2'
         self.status = status  # biphasic, monophasic, unphased
 
 
