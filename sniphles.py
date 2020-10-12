@@ -162,7 +162,7 @@ def sniffles(tmpbam, status):
     [ ] test done
     """
     handle, tmppath = tempfile.mkstemp(suffix=".vcf")
-    subprocess.call(shlex.split(f"sniffles -m {tmpbam} -v {tmppath} --genotype"))
+    subprocess.call(shlex.split(f"sniffles -m {tmpbam} -v {tmppath} --genotype")) # I would set minumum coverage to 2 then we can filter later
     os.remove(tmpbam)
     if status == 'monophasic':
         return tmppath
