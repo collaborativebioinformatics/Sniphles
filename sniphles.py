@@ -84,6 +84,7 @@ def make_bams(bam, chrom, phase_block):
             if read.get_tag('HP') == phase:
                 tmpbam.write(read)
         tmp_bam_paths.append(tmppath)
+    return tmp_bam_paths
 
 
 def sniffles(tmpbam, status):
