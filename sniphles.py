@@ -19,6 +19,10 @@ class PhaseBlock(object):
 
 
 def main():
+    """
+    [ ] implementation done
+    [ ] test done
+    """
     args = get_args()
     bam = pysam.AlignmentFile(args.bam, "rb")
     vcfs_per_chromosome = []
@@ -39,6 +43,10 @@ def main():
 
 
 def get_args():
+    """
+    [x] implementation done
+    [ ] test done
+    """
     parser = ArgumentParser(description="Use Sniffles on a phased bam to get phased SV calls")
     parser.add_argument("-b", "--bam", "phased bam to perform phased SV calling on")
     parser.add_argument("-v", "--vcf", "output VCF file")
@@ -46,6 +54,10 @@ def get_args():
 
 
 def check_phase_blocks(bam, chromosome):
+    """
+    [x] implementation done
+    [ ] test done
+    """
     phase_dict = defaultdict(list)
     coordinate_dict = defaultdict(list)
     for read in bam.fetch(contig=chromosome):
@@ -72,11 +84,15 @@ def check_phase_blocks(bam, chromosome):
                     phase=[phase_dict[block_identifier][0]],
                     status='monophasic')
             )
-        return sorted(phase_blocks, key=lambda x: x.start)
+    return sorted(phase_blocks, key=lambda x: x.start)
 
 
 def get_unphased_blocks(phase_blocks, chromosome_start_position, chromosome_end_position):
-    """ Returns intervals per chromosome where no phasing information is available.
+    """ 
+    [x] implementation done
+    [ ] test done
+
+    Returns intervals per chromosome where no phasing information is available.
 
      Parameters
     ----------
@@ -125,6 +141,10 @@ def get_unphased_blocks(phase_blocks, chromosome_start_position, chromosome_end_
 
 
 def make_bams(bam, chrom, phase_block):
+    """
+    [x] implementation done
+    [ ] test done
+    """
     tmp_bam_paths = []
     for phase in phase_block.phase:
         handle, tmppath = tempfile.mkstemp(suffix=".bam")
@@ -137,6 +157,10 @@ def make_bams(bam, chrom, phase_block):
 
 
 def sniffles(tmpbam, status):
+    """
+    [x] implementation done
+    [ ] test done
+    """
     handle, tmppath = tempfile.mkstemp(suffix=".vcf")
     subprocess.call(shlex.split(f"sniffles -m {tmpbam} -v {tmppath} --genotype")) # I would set minumum coverage to 2 then we can filter later -r 2
     if status == 'monophasic':
@@ -146,6 +170,10 @@ def sniffles(tmpbam, status):
 
 
 def filter_vcf(tmpvcf):
+    """
+    [x] implementation done
+    [ ] test done
+    """
     vcf = VCF(tmpvcf)
     handle, tmppath = tempfile.mkstemp(suffix=".vcf")
     w = Writer(tmppath, vcf)
@@ -156,11 +184,19 @@ def filter_vcf(tmpvcf):
 
 
 def concat_vcf(vcfs):
+    """
+    [ ] implementation done
+    [ ] test done
+    """
     pass
     # Also think about removing the VCFs
 
 
 def merge_haplotypes(H1, H2):
+    """
+    [ ] implementation done
+    [ ] test done
+    """
     pass
     # Also think about removing the VCFs
 
