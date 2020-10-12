@@ -48,8 +48,8 @@ def get_args():
     [ ] test done
     """
     parser = ArgumentParser(description="Use Sniffles on a phased bam to get phased SV calls")
-    parser.add_argument("-b", "--bam", "phased bam to perform phased SV calling on")
-    parser.add_argument("-v", "--vcf", "output VCF file")
+    parser.add_argument("-b", "--bam", help="phased bam to perform phased SV calling on")
+    parser.add_argument("-v", "--vcf", help="output VCF file")
     return parser.parse_args()
 
 
@@ -94,7 +94,7 @@ def get_unphased_blocks(phase_blocks, chromosome_start_position, chromosome_end_
 
     Returns intervals per chromosome where no phasing information is available.
 
-     Parameters
+    Parameters
     ----------
         phase_blocks : PhaseBlock[]
             List of known phase block instances.
