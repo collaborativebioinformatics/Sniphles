@@ -119,7 +119,7 @@ def get_unphased_blocks(phase_blocks, chromosome_start_position, chromosome_end_
         end=interval[1],
         phase=[],
         status='unphased'
-    ) for interval in unphased_intervals]
+    ) for interval in unphased_intervals if interval[0] != interval[1]]
 
     return sorted(unphased_blocks, key=lambda x: x.start)
 
