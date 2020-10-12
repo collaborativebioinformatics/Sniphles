@@ -80,13 +80,18 @@ def update_vcf(args):
             elif line.startswith("#"):
                 # data_out.write("##INFO=<ID=HP,Number=1,Type=Integer,Description=\"Haplotype identifier\">\n")
                 data_out.write("##INFO=<ID=CONFLICT,Number=.,Type=Integer,Description=\"The Phase is conflict or not\">\n")
+                #data_out.write("##INFO=<ID=HP_SV_READ_RATIO_1,Number=.,Type=Float,Description=\"Phase Ratio of 1\">\n")
+                #data_out.write("##INFO=<ID=HP_SV_READ_RATIO_2,Number=.,Type=Float,Description=\"Phase Ratio of 2\">\n")
+
                 data_out.write("##FORMAT=<ID=PS,Number=.,Type=Integer,Description=\"Phase set identifier\">\n")
                 data_out.write(line)
             else:
                 line_split = line.split()
-                #1)Adding PS field to FORMAT column for this cases 1|0,0|1,1|1,0|0,.|. for all -1
+                #1)Adding PS field to FORMAT column for this cases 1|0,0|1,1|1,0|0,.|. for all -1.YES
                 #2)Lets try to analyze homozygous variant to cover uniparental disomy cases
-                #3)REF_NO_CONFLICT,HMZ_NO_CONFLICT,HET_NO_CONFLICT,HET_SNP_ALLELE_CONFLICT,HET_SNP_MISSING
+                #3)REF_NO_CONFLICT,HMZ_NO_CONFLICT,HET_NO_CONFLICT,HET_SNP_ALLELE_CONFLICT,HET_SNP_MISSING????
+                #Binary number,00,01,02
+                #4)Calculate ratio for HET.Count of 1's/Total=HP_SV_READ_RATIO_1.Count of 2's/Total=HP_SV_READ_RATIO_2.YES
                 if line_split[-1].split(":", 1)[0] == "1/1" or line_split[-1].split(":", 1)[0] == "0/0" or line_split[-1].split(":", 1)[0] == "./.":  # no gt to phase
                     data_out.write("{}\n".format("\t".join(line_split)))
                 elif line_split[-1].split(":", 1)[0] in ["0/1", "1/0"]:
