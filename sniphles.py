@@ -75,6 +75,55 @@ def check_phase_blocks(bam, chromosome):
         return sorted(phase_blocks, key=lambda x: x.start)
 
 
+def get_unphased_blocks(phase_blocks, chromosome_start_position, chromosome_end_position):
+    """ Returns intervals per chromosome where no phasing information is available.
+
+     Parameters
+    ----------
+        phase_blocks : PhaseBlock[]
+            List of known phase block instances.
+
+        chromosome_start_position : Int
+            Index for the start position of a chromosome
+
+        chromosome_end_position : Int
+            Index for the end position of a chromosome
+
+    Returns
+    -------
+        unphased_blocks : PhaseBlock[]
+            Intervals in a chromosome where the phase is not known as list of PhaseBlock instances.
+    """
+
+    start_positions = sorted([block.start for block in phase_blocks])
+
+    unphased_intervals_starts = [chromosome_start_position]
+    unphased_intervals_ends = []
+
+    for start in start_positions:
+        max_end_position = max([block.end for block in phase_blocks if block.start == start])
+
+        unphased_intervals_starts.append(max_end_position)  # The end positions of a known interval are the start of
+        # an unphased region
+
+        unphased_intervals_ends.append(start)  # The start positions of known intervals are the end of an unphased
+        # region
+
+    unphased_intervals_ends.append(chromosome_end_position)
+
+    unphased_intervals = zip(unphased_intervals_starts, unphased_intervals_ends)
+
+    unphased_blocks = [PhaseBlock(
+        id='NOID',
+        start=interval[0],
+        end=interval[1],
+        phase=[],
+        status='unphased'
+    ) for interval in unphased_intervals]
+
+    return sorted(unphased_blocks, key=lambda x: x.start)
+
+
 def make_bams(bam, chrom, phase_block):
     tmp_bam_paths = []
     for phase in phase_block.phase:
