@@ -1,3 +1,4 @@
+import sys
 from argparse import ArgumentParser
 import pysam
 from collections import defaultdict
@@ -29,7 +30,8 @@ def main():
     for chrom in bam.references:  # Iterate over all chromosomes separately
         eprint(f"Working on chromosome {chrom}")
         phase_blocks = check_phase_blocks(bam, chrom)
-        # Need to add in the unphased blocks too by complementing
+        phase_blocks.append(get_unphased_blocks(phase_blocks, 0, bam.get_reference_length(
+            chrom)))  # Adding unphased blocks by complementing
         variant_files = defaultdict(list)
         for block in phase_blocks:
             tmpbams = make_bams(bam, chrom=chrom, phase_block=block)
@@ -52,8 +54,10 @@ def get_args():
     parser.add_argument("-v", "--vcf", help="output VCF file")
     return parser.parse_args()
 
+
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
+
 
 def check_phase_blocks(bam, chromosome):
     """
@@ -164,7 +168,8 @@ def sniffles(tmpbam, status):
     [ ] test done
     """
     handle, tmppath = tempfile.mkstemp(suffix=".vcf")
-    subprocess.call(shlex.split(f"sniffles -m {tmpbam} -v {tmppath} --genotype")) # I would set minumum coverage to 2 then we can filter later -s 2 or get the coverage per bam
+    subprocess.call(shlex.split(
+        f"sniffles -m {tmpbam} -v {tmppath} --genotype"))  # I would set minumum coverage to 2 then we can filter later -s 2 or get the coverage per bam
     if status == 'monophasic':
         return tmppath
     else:
