@@ -21,6 +21,11 @@ class TestSniphles(unittest.TestCase):
                          unphased_blocks)
 
 
+    def test_unphased_blocks_with_no_phases(self):
+        unphased_blocks = get_unphased_blocks([], 0, 33000000)
+        self.assertEqual([[0, 33000000]], unphased_blocks)
+
+
 if __name__ == '__main__':
     sniphles_suite = unittest.TestLoader().loadTestsFromTestCase(TestSniphles)
 
