@@ -27,7 +27,7 @@ def main():
     bam = pysam.AlignmentFile(args.bam, "rb")
     vcfs_per_chromosome = []
     for chrom in bam.references:  # Iterate over all chromosomes separately
-        print(f"Working on chromosome {chrom}")
+        eprint(f"Working on chromosome {chrom}")
         phase_blocks = check_phase_blocks(bam, chrom)
         # Need to add in the unphased blocks too by complementing
         variant_files = defaultdict(list)
@@ -48,10 +48,12 @@ def get_args():
     [ ] test done
     """
     parser = ArgumentParser(description="Use Sniffles on a phased bam to get phased SV calls")
-    parser.add_argument("-b", "--bam", "phased bam to perform phased SV calling on")
+    parser.add_argument("-b", "--bam", "Phased bam to perform phased SV calling on")
     parser.add_argument("-v", "--vcf", "output VCF file")
     return parser.parse_args()
 
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
 def check_phase_blocks(bam, chromosome):
     """
@@ -88,7 +90,7 @@ def check_phase_blocks(bam, chromosome):
 
 
 def get_unphased_blocks(phase_blocks, chromosome_start_position, chromosome_end_position):
-    """ 
+    """
     [x] implementation done
     [ ] test done
 
@@ -162,7 +164,7 @@ def sniffles(tmpbam, status):
     [ ] test done
     """
     handle, tmppath = tempfile.mkstemp(suffix=".vcf")
-    subprocess.call(shlex.split(f"sniffles -m {tmpbam} -v {tmppath} --genotype")) # I would set minumum coverage to 2 then we can filter later -r 2
+    subprocess.call(shlex.split(f"sniffles -m {tmpbam} -v {tmppath} --genotype")) # I would set minumum coverage to 2 then we can filter later -s 2 or get the coverage per bam
     if status == 'monophasic':
         return tmppath
     else:
