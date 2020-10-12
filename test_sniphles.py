@@ -3,6 +3,9 @@ from sniphles import get_unphased_blocks, PhaseBlock
 
 
 class TestSniphles(unittest.TestCase):
+    @staticmethod
+    def human_readable_intervals(unphased_blocks):
+        return [[block.start, block.end] for block in unphased_blocks]
 
     def setUp(self):
         # Initiate
@@ -17,13 +20,12 @@ class TestSniphles(unittest.TestCase):
 
     def test_unphased_blocks(self):
         unphased_blocks = get_unphased_blocks(self.phase_blocks, 0, 33000000)
-        self.assertEqual([[0, 3140000], [3160000, 31800000], [31850000, 32000000], [32300000, 33000000]],
-                         unphased_blocks)
-
+        self.assertEqual([[0, 31400000], [31600000, 31800000], [31850000, 32000000], [32300000, 33000000]],
+                         self.human_readable_intervals(unphased_blocks))
 
     def test_unphased_blocks_with_no_phases(self):
         unphased_blocks = get_unphased_blocks([], 0, 33000000)
-        self.assertEqual([[0, 33000000]], unphased_blocks)
+        self.assertEqual([[0, 33000000]], self.human_readable_intervals(unphased_blocks))
 
 
 if __name__ == '__main__':
