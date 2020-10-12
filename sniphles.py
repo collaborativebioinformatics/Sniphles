@@ -6,14 +6,15 @@ import tempfile
 import subprocess
 import shlex
 import os
+from cyvcf2 import VCF, Writer
 
 
 class PhaseBlock(object):
     def __init__(self, id, start, end, phase, status):
-        self.id = id
-        self.start = start
-        self.end = end
-        self.phase = phase
+        self.id = id  # identifier of the phase block in the BAM
+        self.start = start  # first coordinate of a read in the phase block
+        self.end = end  # last coordinate of a read in the phase block
+        self.phase = phase  # '1' or '2'
         self.status = status  # biphasic, monophasic, unphased
 
 
@@ -25,7 +26,6 @@ def main():
         print(f"Working on chromosome {chrom}")
         phase_blocks = check_phase_blocks(bam, chrom)
         # Need to add in the unphased blocks too by complementing
-
         variant_files = defaultdict(list)
         for block in phase_blocks:
             tmpbams = make_bams(bam, chrom=chrom, phase_block=block)
@@ -133,6 +133,7 @@ def make_bams(bam, chrom, phase_block):
             if read.get_tag('HP') == phase:
                 tmpbam.write(read)
         tmp_bam_paths.append(tmppath)
+    return tmp_bam_paths
 
 
 def sniffles(tmpbam, status):
@@ -146,8 +147,13 @@ def sniffles(tmpbam, status):
 
 
 def filter_vcf(tmpvcf):
-    pass
-    # Also think about removing the older vcf
+    vcf = VCF(tmpvcf)
+    handle, tmppath = tempfile.mkstemp(suffix=".vcf")
+    w = Writer(tmppath, vcf)
+    for variant in vcf:
+        pass  # If the variant is not supported by almost all of the reads, then remove it
+    os.remove(tmpvcf)
+    return tmppath
 
 
 def concat_vcf(vcfs):
