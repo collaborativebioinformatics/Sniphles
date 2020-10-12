@@ -1,5 +1,6 @@
 # SVPhase
 
+![alt text](./plots/SV_Phasing.png)
 ## Please cite our work -- here is the ICMJE Standard Citation:
 
 ### ...and a link to the DOI:
@@ -24,7 +25,7 @@ Overview Diagram
 
 # Software Workflow Diagram
 
-# File structure diagram 
+# File structure diagram
 #### _Define paths, variable names, etc_
 
 # Installation options:
@@ -52,7 +53,7 @@ The Docker image contains <this software> as well as a webserver and FTP server 
 
 # Testing
 
-We tested four different tools with <this software>. They can be found in [server/tools/](server/tools/) . 
+We tested four different tools with <this software>. They can be found in [server/tools/](server/tools/) .
 
 # Additional Functionality
 
@@ -64,7 +65,7 @@ We tested four different tools with <this software>. They can be found in [serve
   2. `cd server`
   3. `docker build --rm -t <this software>/<this software> .`
   4. `docker run -t -i <this software>/<this software>`
-  
+
 ### Website
 
 There is also a Docker image for hosting the main website. This should only be used for debug purposes.
@@ -73,4 +74,3 @@ There is also a Docker image for hosting the main website. This should only be u
   2. `cd Website`
   3. `docker build --rm -t <this software>/website .`
   4. `docker run -t -i <this software>/website`
-  
