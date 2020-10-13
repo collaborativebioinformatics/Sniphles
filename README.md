@@ -2,6 +2,19 @@
 
 # Sniphles
 
+Sniples: Using Sniffles - but phased
+- Start from a BAM with phase per read annotated (e.g. from WhatsHap, LongShot)
+- Identify phase blocks and split in monophasic (homozygous), diphasic (heterozygous) and unphased blocks
+- Loop over haplotype blogs, split BAM using temporary files and make phased bams => good opportunity for massive parallelization
+- run sniffles
+- filtering
+- concatenating the parts
+- merging haplotypes back together using SURVIVOR and force-calling Sniffles
+
+BONUS: 
+- can handle cram input (Sniffles CAN'T)
+- will output a correctly SORTED VCF (Sniffles doesn't care)
+
 ## Please cite our work -- here is the ICMJE Standard Citation:
 
 ### ...and a link to the DOI:
