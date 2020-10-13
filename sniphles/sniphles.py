@@ -230,12 +230,7 @@ def make_bams(bam, block):
         os.close(handle)
         tmpbam.close()
         if reads_in_block > 0:
-            try:
-                pysam.index(tmppath)
-            except:
-                eprint(
-                    f"Problem indexing {tmppath} for {block} when phase is {phase} and the file has {reads_in_block} reads")
-                raise()
+            pysam.index(tmppath)
             tmp_bam_paths.append(tmppath)
         else:
             tmp_bam_paths.append(None)
