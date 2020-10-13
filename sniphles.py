@@ -28,33 +28,35 @@ def main():
     args = get_args()
     bam = pysam.AlignmentFile(args.bam, "rb")
     vcfs_per_chromosome = []
+    for chrom_info in bam.get_index_statistics():  # Iterate over all chromosomes separately
+        if chrom_info.mapped > 0:  # chrom_info is a namedtuple
+            chrom = chrom_info.contig
+            eprint(f"Working on chromosome {chrom}")
+            tmpdmos = tempfile.mkdtemp(prefix="mosdepth")
+            tmpdvcf = tempfile.mkdtemp(prefix="sniffles")
+            phase_blocks = check_phase_blocks(bam, chrom)
+            # Adding unphased blocks by complementing
+            phase_blocks.extend(get_unphased_blocks(phase_blocks, bam.get_reference_length(chrom)))
 
-    for chrom in bam.references:  # Iterate over all chromosomes separately
-        eprint(f"Working on chromosome {chrom}")
-        tmpdmos = tempfile.mkdtemp(prefix="mosdepth")
-        tmpdvcf = tempfile.mkdtemp(prefix="sniffles")
-        phase_blocks = check_phase_blocks(bam, chrom)
-        # Adding unphased blocks by complementing
-        phase_blocks.extend(get_unphased_blocks(phase_blocks, bam.get_reference_length(chrom)))
+            variant_files = defaultdict(list)
 
-        variant_files = defaultdict(list)
-
-        for block in phase_blocks:
-            tmpbams = make_bams(bam, chrom=chrom, phase_block=block)
-            for tmpbam, phase in zip(tmpbams, block.phase):
-                cov = get_coverage(tmpdmos, tmpbam, chrom, block)
-                if cov >= 10:  # XXX (Evaluation needed) Do not attempt to call SVs if coverage of phased block < 10
-                    tmpvcf = sniffles(tmpdvcf, tmpbam, block.status)
-                    variant_files[phase].append(tmpvcf)
-                os.remove(tmpbam)
-        h1_vcf = concat_vcf(variant_files['1'])
-        h2_vcf = concat_vcf(variant_files['2'])
-        unph_vcf = concat_vcf(variant_files['u'])
-        chrom_vcf = merge_haplotypes(h1_vcf, h2_vcf, unph_vcf)
-        vcfs_per_chromosome.append(chrom_vcf)
-        shutil.rmtree(tmpdmos)
-        shutil.rmtree(tmpdvcf)
+            for block in phase_blocks:
+                eprint(f"Working on block {block.start}-{block.end}")
+                tmpbams = make_bams(bam, chrom=chrom, phase_block=block)
+                for tmpbam, phase in zip(tmpbams, block.phase):
+                    cov = get_coverage(tmpdmos, tmpbam, chrom, block)
+                    if cov >= 10:  # XXX (Evaluation needed) Do not attempt to call SVs if coverage of phased block < 10
+                        tmpvcf = sniffles(tmpdvcf, tmpbam, block.status)
+                        variant_files[phase].append(tmpvcf)
+                    os.remove(tmpbam)
                     os.remove(tmpbam + '.bai')
+            h1_vcf = concat_vcf(variant_files['1'])
+            h2_vcf = concat_vcf(variant_files['2'])
+            unph_vcf = concat_vcf(variant_files['u'])
+            chrom_vcf = merge_haplotypes(h1_vcf, h2_vcf, unph_vcf)
+            vcfs_per_chromosome.append(chrom_vcf)
+            shutil.rmtree(tmpdmos)
+            shutil.rmtree(tmpdvcf)
     concat_vcf(vcfs_per_chromosome, output=args.vcf)
 
 
