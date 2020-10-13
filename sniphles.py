@@ -1,5 +1,5 @@
 import sys
-from argparse import ArgumentParser
+import argparse
 import pysam
 from collections import defaultdict
 import numpy as np
@@ -30,7 +30,7 @@ def main():
     for chrom in bam.references:  # Iterate over all chromosomes separately
         eprint(f"Working on chromosome {chrom}")
         phase_blocks = check_phase_blocks(bam, chrom)
-        phase_blocks.append(get_unphased_blocks(phase_blocks, 0, bam.get_reference_length(
+        phase_blocks.extend(get_unphased_blocks(phase_blocks, 0, bam.get_reference_length(
             chrom)))  # Adding unphased blocks by complementing
         variant_files = defaultdict(list)
         for block in phase_blocks:
@@ -49,9 +49,17 @@ def get_args():
     [x] implementation done
     [ ] test done
     """
-    parser = ArgumentParser(description="Use Sniffles on a phased bam to get phased SV calls")
+    parser = argparse.ArgumentParser(
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                description="Use Sniffles on a phased bam to get phased SV calls",
+                add_help=True)
     parser.add_argument("-b", "--bam", help="Phased bam to perform phased SV calling on")
     parser.add_argument("-v", "--vcf", help="output VCF file")
+
+    if len(sys.argv) == 1:
+         parser.print_help(sys.stderr)
+         sys.exit(1)
+
     return parser.parse_args()
 
 
@@ -156,7 +164,7 @@ def make_bams(bam, chrom, phase_block):
         handle, tmppath = tempfile.mkstemp(suffix=".bam")
         tmpbam = pysam.AlignmentFile(tmppath, mode='wb', template=bam)
         for read in bam.fetch(contig=chrom, start=phase_block.start, end=phase_block.end):
-            if read.get_tag('HP') == phase:
+            if read.has_tag('HP') and read.get_tag('HP') == phase:
                 tmpbam.write(read)
         tmp_bam_paths.append(tmppath)
     return tmp_bam_paths
@@ -195,9 +203,17 @@ def concat_vcf(vcfs):
     [ ] implementation done
     [ ] test done
     """
-    pass
-    # Also think about removing the VCFs
+    tmppath = None
+    if vcfs:
+        handle, tmppath = tempfile.mkstemp(suffix=".vcf")
+        cmd = 'bcftools concat {i} -o {}'.format(i=' '.join(vcfs), o=tmppath)
+        subprocess.check_output(cmd, shell=True)
 
+    # remove temp vcf files
+    for vcf in vcfs:
+        os.remove(vcf)
+
+    return tmppath
 
 def merge_haplotypes(H1, H2):
     """
