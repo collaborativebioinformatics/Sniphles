@@ -7,6 +7,7 @@ import tempfile
 import subprocess
 import shlex
 import os
+import shutil
 from cyvcf2 import VCF, Writer
 
 
