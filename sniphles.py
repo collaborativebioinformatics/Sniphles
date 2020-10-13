@@ -10,7 +10,7 @@ from shlex import split as shsplit
 from pprint import pformat
 import os
 import shutil
-from cyvcf2 import VCF, Writer
+# from cyvcf2 import VCF, Writer
 
 # Create a custom logger
 logger = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ def main():
             tmpdvcf = tempfile.mkdtemp(prefix="sniffles")
             phase_blocks = check_phase_blocks(bam, chrom)
             # Adding unphased blocks by complementing
-            phase_blocks.extend(get_unphased_blocks(phase_blocks, bam.get_reference_length(chrom)))
+            phase_blocks.extend(get_unphased_blocks(phase_blocks, bam.get_reference_length(chrom), chrom))
             # LOG THE NUMBER OF BIPHASIC, MONOPHASIC AND UNPHASED BLOCKS
             variant_files = defaultdict(list)
 
@@ -142,7 +142,7 @@ def check_phase_blocks(bam, chromosome):
     return sorted(phase_blocks, key=lambda x: x.start)
 
 
-def get_unphased_blocks(phase_blocks, chromosome_end_position):
+def get_unphased_blocks(phase_blocks, chromosome_end_position, chromosome_id):
     """
     Returns intervals per chromosome where no phasing information is available.
 
@@ -154,8 +154,11 @@ def get_unphased_blocks(phase_blocks, chromosome_end_position):
         phase_blocks : PhaseBlock[]
             List of known phase block instances.
 
-        chromosome_end_position : Int
+        chromosome_end_position : int
             Index for the end position of a chromosome
+
+        chromosome_id : str
+            ID of the chromosome
 
     Returns
     -------
@@ -181,10 +184,9 @@ def get_unphased_blocks(phase_blocks, chromosome_end_position):
 
     unphased_intervals = zip(unphased_intervals_starts, unphased_intervals_ends)
 
-    chromosome = phase_blocks[0].chrom
     unphased_blocks = [PhaseBlock(
         id='NOID',
-        chrom=chromosome,
+        chrom=chromosome_id,
         start=interval[0],
         end=interval[1],
         phase=['u'],
