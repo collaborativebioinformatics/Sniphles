@@ -193,8 +193,8 @@ def get_unphased_blocks(phase_blocks, chromosome_end_position, chromosome_id):
     unphased_blocks = [PhaseBlock(
         id='NOID',
         chrom=chromosome_id,
-        start=interval[0],
-        end=interval[1],
+        start=np.amin(interval),
+        end=np.amax(interval),
         phase=['u'],
         status='unphased'
     ) for interval in unphased_intervals if interval[0] != interval[1]]
