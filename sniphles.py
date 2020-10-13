@@ -243,8 +243,11 @@ def sniffles(tmpdvcf, tmpbam, status):
     # Used default values in sniffles to filter SVs based on homozygous or heterozygous allelic frequency (AF).
     # Will not attempt to remove calls based on the FILTER field in VCF, which only shows unresovled insertion length other than PASS.
     support = 5  # Temporary value
+    FNULL = open(os.devnull, 'w')
     subprocess.call(shsplit(
-        f"sniffles --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {support} -m {tmpbam} -v {tmppath}"))
+        f"sniffles --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {support} -m {tmpbam} -v {tmppath}"),
+        stdout=FNULL,
+        stderr=subprocess.STDOUT)
     c = subprocess.Popen(shsplit(f"bcftools sort {tmppath}"), stdout=subprocess.PIPE)
     handle, compressed_vcf = tempfile.mkstemp(suffix=".vcf.gz")
     subprocess.call(shsplit("bgzip -c"), stdin=c.stdout, stdout=handle)
