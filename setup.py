@@ -11,6 +11,7 @@ setup(name='sniphles',
       install_requires=[
           'pysam',
           'numpy',
+          'cyvcf2',
       ],
       packages=find_packages(exclude=('tests',)),
       python_requires='>=3.6',
