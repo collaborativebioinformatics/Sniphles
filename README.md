@@ -54,18 +54,19 @@ The Docker image contains <this software> as well as a webserver and FTP server 
 2. `docker run ncbihackathons/<this software>` Run the docker image from the master shell script
 3. Edit the configuration files as below
 
-### Installing <this software> from Github
+### Installing <this software> from Github using Python.
 
-1. `git clone https://github.com/NCBI-Hackathons/<this software>.git`
-2. Edit the configuration files as below
-3. `sh server/<this software>.sh` to test
-4. Add cron job as required (to execute <this software>.sh script)
-
-### Configuration
-
-```Examples here```
+1. `git clone https://github.com/collaborativebioinformatics/Sniphles.git`
+2. `cd <repository-folder-path>`
+3. `python setup.py install`
 
 # Testing
+
+Python unittests are enabled, run:
+
+```shell script
+python -m unittest
+```
 
 We tested four different tools with <this software>. They can be found in [server/tools/](server/tools/) .
 
