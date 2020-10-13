@@ -40,8 +40,8 @@ def main():
         for block in phase_blocks:
             tmpbams = make_bams(bam, chrom=chrom, phase_block=block)
             for tmpbam, phase in zip(tmpbams, block.phase):
-                if cov >= 10:# XXX (Evaluation needed) Do not attempt to call SVs if coverage of phased block < 10
                 cov = get_coverage(tmpdmos, tmpbam, chrom, block)
+                if cov >= 10:  # XXX (Evaluation needed) Do not attempt to call SVs if coverage of phased block < 10
                     tmpvcf = sniffles(tmpbam, block.status)
                     variant_files[phase].append(tmpvcf)
                 os.remove(tmpbam)
@@ -54,22 +54,21 @@ def main():
     shutil.rmtree(tmpdvcf)
 
 
-
 def get_args():
     """
     [x] implementation done
     [ ] test done
     """
     parser = argparse.ArgumentParser(
-                formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                description="Use Sniffles on a phased bam to get phased SV calls",
-                add_help=True)
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        description="Use Sniffles on a phased bam to get phased SV calls",
+        add_help=True)
     parser.add_argument("-b", "--bam", help="Phased bam to perform phased SV calling on")
     parser.add_argument("-v", "--vcf", help="output VCF file")
 
     if len(sys.argv) == 1:
-         parser.print_help(sys.stderr)
-         sys.exit(1)
+        parser.print_help(sys.stderr)
+        sys.exit(1)
 
     return parser.parse_args()
 
@@ -146,10 +145,12 @@ def get_unphased_blocks(phase_blocks, chromosome_start_position, chromosome_end_
     for start in start_positions:
         max_end_position = max([block.end for block in phase_blocks if block.start == start])
 
-        unphased_intervals_starts.append(max_end_position)  # The end positions of a known interval are the start of
+        # The end positions of a known interval are the start of
+        unphased_intervals_starts.append(max_end_position)
         # an unphased region
 
-        unphased_intervals_ends.append(start)  # The start positions of known intervals are the end of an unphased
+        # The start positions of known intervals are the end of an unphased
+        unphased_intervals_ends.append(start)
         # region
 
     unphased_intervals_ends.append(chromosome_end_position)
@@ -209,7 +210,8 @@ def sniffles(tmpdvcf, tmpbam, status):
     tmpd = tempfile.mkdtemp(prefix=f"sniffles_tmp")
     # Used default values in sniffles to filter SVs based on homozygous or heterozygous allelic frequency (AF).
     # Will not attempt to remove calls based on the FILTER field in VCF, which only shows unresovled insertion length other than PASS.
-    subprocess.call(shlex.split(f"sniffles --tmp_file {tmpd} --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {s} -m {tmpbam} -v {tmppath}"))
+    subprocess.call(shlex.split(
+        f"sniffles --tmp_file {tmpd} --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {s} -m {tmpbam} -v {tmppath}"))
     shutil.rmtree(tmpd)
     return tmppath
 
@@ -230,6 +232,7 @@ def concat_vcf(vcfs):
         os.remove(vcf)
 
     return tmppath
+
 
 def merge_haplotypes(H1, H2):
     """
