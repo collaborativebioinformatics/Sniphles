@@ -66,7 +66,7 @@ def main():
                     if tmpbam:
                         cov = get_coverage(tmpbam, block)
                         # XXX (Evaluation needed) Do not attempt to call SVs if coverage of phased block < 10
-                        if cov >= 10: ## TODO:  should be aegs.min_re
+                        if cov >= args.minimum_suport_read: 
                             tmpvcf = sniffles(tmpdvcf, tmpbam, block.status)
                             variant_files[phase].append(tmpvcf)
                         else: ## TODO: # We should implemet some logic here
@@ -100,6 +100,9 @@ def get_args():
     parser.add_argument("-l", "--log",
                         help="Log file", dest='log_file', type=str,
                         default="sniphles.log")
+    parser.add_argument("-s", "--minimum_suport_read",
+                        help="Minimum support read to call SV equals to -s in sniffles", dest='minimum_suport_read', type=int,
+                        default=4)
     return parser.parse_args()
 
 
