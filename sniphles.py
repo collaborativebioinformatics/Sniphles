@@ -52,8 +52,10 @@ def get_args():
     parser.add_argument("-v", "--vcf", "output VCF file")
     return parser.parse_args()
 
+
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
+
 
 def check_phase_blocks(bam, chromosome):
     """
