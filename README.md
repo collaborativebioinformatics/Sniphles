@@ -1,11 +1,10 @@
-# SVPhase
+![logo](./plots/sniphles-logo.png)
 
-![alt text](./plots/SV_Phasing.png)
+# Sniphles
+
 ## Please cite our work -- here is the ICMJE Standard Citation:
 
 ### ...and a link to the DOI:
-
-## Awesome Logo
 
 ### You can make a free DOI with zenodo <link>
 
@@ -24,6 +23,8 @@ Overview Diagram
 # How to use <this software>
 
 # Software Workflow Diagram
+
+![workflow](./plots/SV_Phasing.png)
 
 # File structure diagram
 #### _Define paths, variable names, etc_
