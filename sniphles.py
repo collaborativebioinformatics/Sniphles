@@ -95,10 +95,10 @@ def check_phase_blocks(bam, chromosome):
 
 def get_unphased_blocks(phase_blocks, chromosome_start_position, chromosome_end_position):
     """
-    [x] implementation done
-    [ ] test done
-
     Returns intervals per chromosome where no phasing information is available.
+
+    [x] implementation done
+    [x] test done
 
     Parameters
     ----------
