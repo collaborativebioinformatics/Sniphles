@@ -255,18 +255,19 @@ def get_coverage(tmpbam, block):
     return cov
 
 
-def sniffles(tmpdvcf, tmpbam, status):
+def sniffles(tmpdvcf, tmpbam, status, support=5):
     """
     [x] implementation done
     [ ] test done
 
-    factor: relative coverage threshold for supporting reads. Needs to be evaluated.
+    support: minimal number of supporting reads. Needs to be evaluated. For unphased regions, this number doubles.
     """
     handle, tmppath = tempfile.mkstemp(prefix=tmpdvcf, suffix=".vcf")
     # Used default values in sniffles to filter SVs based on homozygous or heterozygous allelic frequency (AF).
     # Will not attempt to remove calls based on the FILTER field in VCF, which only shows unresovled insertion length other than PASS.
     support = 5  # Temporary value
     FNULL = open(os.devnull, 'w')
+    if status == "unphased": support *= 2
     subprocess.call(shsplit(
         f"sniffles --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {support} -m {tmpbam} -v {tmppath}"),
         stdout=FNULL,
