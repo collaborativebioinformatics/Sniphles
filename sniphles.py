@@ -194,6 +194,7 @@ def make_bams(bam, chrom, phase_block):
             for read in bam.fetch(contig=chrom, start=phase_block.start, end=phase_block.end):
                 if read.has_tag('HP') and read.get_tag('HP') == phase:
                     tmpbam.write(read)
+        tmpbam.close()
         pysam.index(tmppath)
         tmp_bam_paths.append(tmppath)
     return tmp_bam_paths
