@@ -5,7 +5,7 @@ from collections import defaultdict
 import numpy as np
 import tempfile
 import subprocess
-import shlex
+from shlex import split as shsplit
 import os
 import shutil
 from cyvcf2 import VCF, Writer
@@ -224,8 +224,8 @@ def get_coverage(tmpbam, block):
     _, tmpbed = tempfile.mkstemp(suffix=".bed")
     with open(tmpbed, 'w') as outf:
         outf.write(f"{block.chrom}\t{block.start}\t{block.end}\n")
-    subprocess.call(shlex.split(
-        f"mosdepth -n -x -b {tmpbed} {tmpdir}/{block.chrom}.{block.start} {tmpbam}"))
+    subprocess.call(
+        shsplit(f"mosdepth -n -x -b {tmpbed} {tmpdir}/{block.chrom}.{block.start} {tmpbam}"))
     cov = np.loadtxt(f"{tmpdir}/{block.chrom}.{block.start}.regions.bed.gz", usecols=3, dtype=float)
     os.remove(tmpbed)
     shutil.rmtree(tmpdir)
@@ -244,10 +244,13 @@ def sniffles(tmpdvcf, tmpbam, status):
     # Used default values in sniffles to filter SVs based on homozygous or heterozygous allelic frequency (AF).
     # Will not attempt to remove calls based on the FILTER field in VCF, which only shows unresovled insertion length other than PASS.
     support = 5  # Temporary value
-    subprocess.call(shlex.split(
+    subprocess.call(shsplit(
         f"sniffles --tmp_file {tmpd} --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {support} -m {tmpbam} -v {tmppath}"))
+    c = subprocess.Popen(shsplit(f"bcftools sort {tmppath}"), stdout=subprocess.PIPE)
+    subprocess.call(
+        shsplit(f"bgzip > {tmppath + '.gz'} & & tabix {tmppath + '.gz'} "), stdin=c.stdout)
+    os.remove(tmppath)
     shutil.rmtree(tmpd)
-    subprocess.call(shlex.split(f"bgzip {tmppath} && tabix {tmppath + '.gz'} "))
     return tmppath + '.gz'
 
 
@@ -258,7 +261,7 @@ def concat_vcf(vcfs, output=tempfile.mkstemp(suffix=".vcf")[1]):
     """
     if vcfs:
         cmd = f"bcftools concat -a {' '.join(vcfs)} | bcftools sort -o {output}"
-        subprocess.check_output(shlex.split(cmd))
+        subprocess.check_output(shsplit(cmd))
         # remove temp vcf files
         for vcf in vcfs:
             os.remove(vcf)
