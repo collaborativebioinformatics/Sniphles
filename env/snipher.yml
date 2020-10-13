@@ -1,4 +1,7 @@
 name: snipher
+channels:
+  - bioconda
 dependencies:
   - pysam
   - numpy
+  - cyvcf2
