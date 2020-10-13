@@ -113,7 +113,7 @@ def update_vcf(args):
                                         count_of_2s+=1
                                 else:
                                     count_of_None=+1
-                            ratios = count_of_1s,",",count_of_2s,",",count_of_None
+                            ratios = count_of_1s,count_of_2s,count_of_None
                             line_split[7] = "{info};CONFLICT={conflict};HP_RATIO={hp_ratio}".format(info=line_split[7], conflict=1, hp_ratio=ratios)
 
                             line_split[-2] = "{}:{}".format(line_split[-2], "PS")
