@@ -44,7 +44,7 @@ def main():
             for tmpbam, phase in zip(tmpbams, block.phase):
                 cov = get_coverage(tmpdmos, tmpbam, chrom, block)
                 if cov >= 10:  # XXX (Evaluation needed) Do not attempt to call SVs if coverage of phased block < 10
-                    tmpvcf = sniffles(tmpbam, block.status)
+                    tmpvcf = sniffles(tmpdvcf, tmpbam, block.status)
                     variant_files[phase].append(tmpvcf)
                 os.remove(tmpbam)
         h1_vcf = concat_vcf(variant_files['1'])
