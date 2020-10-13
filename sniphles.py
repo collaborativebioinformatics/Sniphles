@@ -28,11 +28,11 @@ def main():
     args = get_args()
     bam = pysam.AlignmentFile(args.bam, "rb")
     vcfs_per_chromosome = []
-    tmpdmos = tempfile.mkdtemp(prefix=f"mosdepth")
-    tmpdvcf = tempfile.mkdtemp(prefix=f"sniffles")
 
     for chrom in bam.references:  # Iterate over all chromosomes separately
         eprint(f"Working on chromosome {chrom}")
+        tmpdmos = tempfile.mkdtemp(prefix=f"mosdepth")
+        tmpdvcf = tempfile.mkdtemp(prefix=f"sniffles")
         phase_blocks = check_phase_blocks(bam, chrom)
         # Adding unphased blocks by complementing
         phase_blocks.extend(get_unphased_blocks(phase_blocks, bam.get_reference_length(chrom)))
@@ -52,9 +52,9 @@ def main():
         unph_vcf = concat_vcf(variant_files['u'])
         chrom_vcf = merge_haplotypes(h1_vcf, h2_vcf, unph_vcf)
         vcfs_per_chromosome.append(chrom_vcf)
+        shutil.rmtree(tmpdmos)
+        shutil.rmtree(tmpdvcf)
     concat_vcf(vcfs_per_chromosome, output=args.vcf)
-    shutil.rmtree(tmpdmos)
-    shutil.rmtree(tmpdvcf)
 
 
 def get_args():
