@@ -36,6 +36,7 @@ def main():
         phase_blocks = check_phase_blocks(bam, chrom)
         # Adding unphased blocks by complementing
         phase_blocks.extend(get_unphased_blocks(phase_blocks, bam.get_reference_length(chrom)))
+
         variant_files = defaultdict(list)
 
         for block in phase_blocks:
@@ -46,9 +47,10 @@ def main():
                     tmpvcf = sniffles(tmpbam, block.status)
                     variant_files[phase].append(tmpvcf)
                 os.remove(tmpbam)
-        H1 = concat_vcf(variant_files['1'])
-        H2 = concat_vcf(variant_files['2'])
-        chrom_vcf = merge_haplotypes(H1, H2)
+        h1_vcf = concat_vcf(variant_files['1'])
+        h2_vcf = concat_vcf(variant_files['2'])
+        unph_vcf = concat_vcf(variant_files['u'])
+        chrom_vcf = merge_haplotypes(h1_vcf, h2_vcf, unph_vcf)
         vcfs_per_chromosome.append(chrom_vcf)
 
     shutil.rmtree(tmpdmos)
