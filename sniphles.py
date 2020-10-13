@@ -31,8 +31,8 @@ def main():
 
     for chrom in bam.references:  # Iterate over all chromosomes separately
         eprint(f"Working on chromosome {chrom}")
-        tmpdmos = tempfile.mkdtemp(prefix=f"mosdepth")
-        tmpdvcf = tempfile.mkdtemp(prefix=f"sniffles")
+        tmpdmos = tempfile.mkdtemp(prefix="mosdepth")
+        tmpdvcf = tempfile.mkdtemp(prefix="sniffles")
         phase_blocks = check_phase_blocks(bam, chrom)
         # Adding unphased blocks by complementing
         phase_blocks.extend(get_unphased_blocks(phase_blocks, bam.get_reference_length(chrom)))
