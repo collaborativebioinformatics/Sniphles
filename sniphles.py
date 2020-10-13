@@ -64,13 +64,12 @@ def get_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="Use Sniffles on a phased bam to get phased SV calls",
         add_help=True)
-    parser.add_argument("-b", "--bam", help="Phased bam to perform phased SV calling on")
-    parser.add_argument("-v", "--vcf", help="output VCF file")
-
-    if len(sys.argv) == 1:
-        parser.print_help(sys.stderr)
-        sys.exit(1)
-
+    parser.add_argument("-b", "--bam",
+                        help="Phased bam to perform phased SV calling on",
+                        required=True)
+    parser.add_argument("-v", "--vcf",
+                        help="output VCF file",
+                        required=True)
     return parser.parse_args()
 
 
