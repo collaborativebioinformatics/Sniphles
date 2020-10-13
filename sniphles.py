@@ -26,20 +26,31 @@ def main():
     args = get_args()
     bam = pysam.AlignmentFile(args.bam, "rb")
     vcfs_per_chromosome = []
+    tmpdmos = tempfile.mkdtemp(prefix=f"mosdepth")
+    tmpdvcf = tempfile.mkdtemp(prefix=f"sniffles")
+
     for chrom in bam.references:  # Iterate over all chromosomes separately
         print(f"Working on chromosome {chrom}")
         phase_blocks = check_phase_blocks(bam, chrom)
         # Need to add in the unphased blocks too by complementing
         variant_files = defaultdict(list)
+
         for block in phase_blocks:
             tmpbams = make_bams(bam, chrom=chrom, phase_block=block)
             for tmpbam, phase in zip(tmpbams, block.phase):
-                tmpvcf = sniffles(tmpbam, status=block.status)
-                variant_files[phase].append(tmpvcf)
+                cov = get_coverage(tmpdmos, tmp.bam, chrom, block)
+                if cov >= 10:# XXX (Evaluation needed) Do not attempt to call SVs if coverage of phased block < 10
+                    tmpvcf = sniffles(tmpbam, block.status)
+                    variant_files[phase].append(tmpvcf)
+                os.remove(tmpbam)
         H1 = concat_vcf(variant_files['1'])
         H2 = concat_vcf(variant_files['2'])
         chrom_vcf = merge_haplotypes(H1, H2)
         vcfs_per_chromosome.append(chrom_vcf)
+
+    shutil.rmtree(tmpdmos)
+    shutil.rmtree(tmpdvcf)
+
 
 
 def get_args():
@@ -57,6 +68,8 @@ def check_phase_blocks(bam, chromosome):
     """
     [x] implementation done
     [ ] test done
+
+    TODO: check if regions with >2 blocks exist
     """
     phase_dict = defaultdict(list)
     coordinate_dict = defaultdict(list)
@@ -156,31 +169,33 @@ def make_bams(bam, chrom, phase_block):
     return tmp_bam_paths
 
 
-def sniffles(tmpbam, status):
+def get_coverage(tmpdir, tmp.bam, chrom, block):
     """
     [x] implementation done
     [ ] test done
     """
-    handle, tmppath = tempfile.mkstemp(suffix=".vcf")
-    subprocess.call(shlex.split(f"sniffles -m {tmpbam} -v {tmppath} --genotype")) # I would set minumum coverage to 2 then we can filter later
-    os.remove(tmpbam)
-    if status == 'monophasic':
-        return tmppath
-    else:
-        return filter_vcf(tmppath)
+    _, tmpbed = tempfile.mkstemp(suffix=".bed")
+    with open(tmpbed, 'w') as f:
+        outf.write(f"{chrom}\t{block.start}\t{block.end}\n")
+    subprocess.call(shlex.split(f"mosdepth -n -x -b {tmpbed} {tmpdir}/{chrom}.{block.start} {tmpbam}"))
+    cov = np.loadtxt(f"{tmpdir}/{chrom}.{block.start}.regions.bed.gz", usecols=3, dtype=float)
+    os.remove(tmpbed)
+    return cov
 
 
-def filter_vcf(tmpvcf):
+def sniffles(tmpdvcf, tmpbam, status):
     """
     [x] implementation done
     [ ] test done
+
+    factor: relative coverage threshold for supporting reads. Needs to be evaluated.
     """
-    vcf = VCF(tmpvcf)
-    handle, tmppath = tempfile.mkstemp(suffix=".vcf")
-    w = Writer(tmppath, vcf)
-    for variant in vcf:
-        pass  # If the variant is not supported by almost all of the reads, then remove it
-    os.remove(tmpvcf)
+    handle, tmppath = tempfile.mkstemp(prefix=tmpdvcf, suffix=".vcf")
+    tmpd = tmpfile.mkdtemp(prefix=f"sniffles_tmp")
+    # Used default values in sniffles to filter SVs based on homozygous or heterozygous allelic frequency (AF).
+    # Will not attempt to remove calls based on the FILTER field in VCF, which only shows unresovled insertion length other than PASS.
+    subprocess.call(shlex.split(f"sniffles --tmp_file {tmpd} --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {s} -m {tmpbam} -v {tmppath}"))
+    shutil.rmtree(tmpd)
     return tmppath
 
 
