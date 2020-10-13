@@ -229,7 +229,7 @@ def sniffles(tmpdvcf, tmpbam, status):
 
 def concat_vcf(vcfs, output=tempfile.mkstemp(suffix=".vcf")[1]):
     """
-    [ ] implementation done
+    [X] implementation done
     [ ] test done
     """
     if vcfs:
