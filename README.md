@@ -2,6 +2,14 @@
 
 # Sniphles
 
+#### Phasing SVs using phased SNVs
+- parse out the haplotype blocks
+- loop over haplotype blogs, split BAM using temporary files and make phased bams
+- run sniffles
+- filtering
+- concatenating the parts
+- merging haplotypes back together
+
 ## Please cite our work -- here is the ICMJE Standard Citation:
 
 ### ...and a link to the DOI:
