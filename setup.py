@@ -12,6 +12,6 @@ setup(name='sniphles',
           'pysam',
           'numpy',
       ],
-      packages=find_packages(),
+      packages=find_packages(exclude=('tests',)),
       python_requires='>=3.8',
       zip_safe=False)

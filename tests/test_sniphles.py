@@ -1,5 +1,5 @@
 import unittest
-from sniphles import get_unphased_blocks, PhaseBlock
+from sniphles import PhaseBlock, get_unphased_blocks
 
 
 class TestSniphles(unittest.TestCase):
