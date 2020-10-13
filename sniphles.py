@@ -40,8 +40,8 @@ def main():
         for block in phase_blocks:
             tmpbams = make_bams(bam, chrom=chrom, phase_block=block)
             for tmpbam, phase in zip(tmpbams, block.phase):
-                cov = get_coverage(tmpdmos, tmp.bam, chrom, block)
                 if cov >= 10:# XXX (Evaluation needed) Do not attempt to call SVs if coverage of phased block < 10
+                cov = get_coverage(tmpdmos, tmpbam, chrom, block)
                     tmpvcf = sniffles(tmpbam, block.status)
                     variant_files[phase].append(tmpvcf)
                 os.remove(tmpbam)
@@ -183,15 +183,16 @@ def make_bams(bam, chrom, phase_block):
     return tmp_bam_paths
 
 
-def get_coverage(tmpdir, tmp.bam, chrom, block):
+def get_coverage(tmpdir, tmpbam, chrom, block):
     """
     [x] implementation done
     [ ] test done
     """
     _, tmpbed = tempfile.mkstemp(suffix=".bed")
-    with open(tmpbed, 'w') as f:
+    with open(tmpbed, 'w') as outf:
         outf.write(f"{chrom}\t{block.start}\t{block.end}\n")
-    subprocess.call(shlex.split(f"mosdepth -n -x -b {tmpbed} {tmpdir}/{chrom}.{block.start} {tmpbam}"))
+    subprocess.call(shlex.split(
+        f"mosdepth -n -x -b {tmpbed} {tmpdir}/{chrom}.{block.start} {tmpbam}"))
     cov = np.loadtxt(f"{tmpdir}/{chrom}.{block.start}.regions.bed.gz", usecols=3, dtype=float)
     os.remove(tmpbed)
     return cov
@@ -205,7 +206,7 @@ def sniffles(tmpdvcf, tmpbam, status):
     factor: relative coverage threshold for supporting reads. Needs to be evaluated.
     """
     handle, tmppath = tempfile.mkstemp(prefix=tmpdvcf, suffix=".vcf")
-    tmpd = tmpfile.mkdtemp(prefix=f"sniffles_tmp")
+    tmpd = tempfile.mkdtemp(prefix=f"sniffles_tmp")
     # Used default values in sniffles to filter SVs based on homozygous or heterozygous allelic frequency (AF).
     # Will not attempt to remove calls based on the FILTER field in VCF, which only shows unresovled insertion length other than PASS.
     subprocess.call(shlex.split(f"sniffles --tmp_file {tmpd} --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {s} -m {tmpbam} -v {tmppath}"))
