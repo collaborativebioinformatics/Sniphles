@@ -10,7 +10,7 @@ from shlex import split as shsplit
 from pprint import pformat
 import os
 import shutil
-# from cyvcf2 import VCF, Writer
+from cyvcf2 import VCF, Writer
 
 # Create a custom logger
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ def main():
     f_handler.setFormatter(f_format)
     logger.addHandler(f_handler)
     logger.info("Used params\n{}".format(pformat(vars(args))))
-    
+
     bam = pysam.AlignmentFile(args.bam, "rb")
     vcfs_per_chromosome = []
     for chrom_info in bam.get_index_statistics():  # Iterate over all chromosomes separately
