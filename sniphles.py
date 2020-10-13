@@ -240,18 +240,16 @@ def sniffles(tmpdvcf, tmpbam, status):
     factor: relative coverage threshold for supporting reads. Needs to be evaluated.
     """
     handle, tmppath = tempfile.mkstemp(prefix=tmpdvcf, suffix=".vcf")
-    tmpd = tempfile.mkdtemp(prefix=f"sniffles_tmp")
     # Used default values in sniffles to filter SVs based on homozygous or heterozygous allelic frequency (AF).
     # Will not attempt to remove calls based on the FILTER field in VCF, which only shows unresovled insertion length other than PASS.
     support = 5  # Temporary value
     subprocess.call(shsplit(
-        f"sniffles --tmp_file {tmpd} --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {support} -m {tmpbam} -v {tmppath}"))
+        f"sniffles --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {support} -m {tmpbam} -v {tmppath}"))
     c = subprocess.Popen(shsplit(f"bcftools sort {tmppath}"), stdout=subprocess.PIPE)
     handle, compressed_vcf = tempfile.mkstemp(suffix=".vcf.gz")
     subprocess.call(shsplit("bgzip -c"), stdin=c.stdout, stdout=handle)
     subprocess.call(shsplit(f"tabix {compressed_vcf}"))
     os.remove(tmppath)
-    shutil.rmtree(tmpd)
     return compressed_vcf
 
 
