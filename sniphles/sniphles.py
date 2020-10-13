@@ -10,6 +10,7 @@ from shlex import split as shsplit
 from pprint import pformat
 import os
 import shutil
+import itertools
 from cyvcf2 import VCF, Writer
 
 # Create a custom logger
@@ -170,6 +171,15 @@ def get_unphased_blocks(phase_blocks, chromosome_end_position, chromosome_id):
     """
 
     start_positions = sorted([block.start for block in phase_blocks])
+
+    def compare_and_update_phased_blocks(previous, trailing):
+        if previous.start < trailing.start < previous.end:
+            previous.end = trailing.end  # merge these and extend the end of the phased block, disregards phases.
+            return previous
+        else:
+            return trailing
+
+    phase_blocks = list(itertools.accumulate(phase_blocks, compare_and_update_phased_blocks))
 
     unphased_intervals_starts = [0]
     unphased_intervals_ends = []
