@@ -1,0 +1,5 @@
+name: snipher
+dependencies:
+  - pysam
+  - numpy
+  - cyvcf2
