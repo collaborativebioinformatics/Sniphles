@@ -5,3 +5,6 @@ dependencies:
   - pysam
   - numpy
   - cyvcf2
+  - mosdepth
+  - sniffles
+  - bcftools

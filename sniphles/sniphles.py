@@ -173,8 +173,6 @@ def get_unphased_blocks(phase_blocks, chromosome_end_position, chromosome_id):
             Intervals in a chromosome where the phase is not known as list of PhaseBlock instances.
     """
 
-    start_positions = sorted([block.start for block in phase_blocks])
-
     def compare_and_update_phased_blocks(previous, trailing):
         if previous.start < trailing.start < previous.end:
             previous.end = trailing.end  # merge these and extend the end of the phased block, disregards phases.
@@ -183,6 +181,8 @@ def get_unphased_blocks(phase_blocks, chromosome_end_position, chromosome_id):
             return trailing
 
     phase_blocks = list(itertools.accumulate(phase_blocks, compare_and_update_phased_blocks))
+
+    start_positions = sorted([block.start for block in phase_blocks])
 
     unphased_intervals_starts = [0]
     unphased_intervals_ends = []
@@ -203,8 +203,8 @@ def get_unphased_blocks(phase_blocks, chromosome_end_position, chromosome_id):
     unphased_blocks = [PhaseBlock(
         id='NOID',
         chrom=chromosome_id,
-        start=np.amin(interval),
-        end=np.amax(interval),
+        start=interval[0],
+        end=interval[1],
         phase=['u'],
         status='unphased'
     ) for interval in unphased_intervals if interval[0] != interval[1]]
