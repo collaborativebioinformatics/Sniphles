@@ -13,10 +13,10 @@ from cyvcf2 import VCF, Writer
 
 class PhaseBlock(object):
     def __init__(self, id, start, end, phase, status):
-        self.id = id  # identifier of the phase block in the BAM
+        self.id = id  # identifier of the phase block in the BAM, coordinate of the first SNV
         self.start = start  # first coordinate of a read in the phase block
         self.end = end  # last coordinate of a read in the phase block
-        self.phase = phase  # '1' or '2'
+        self.phase = phase  # List with '1' and/or '2'
         self.status = status  # biphasic, monophasic, unphased
 
 
