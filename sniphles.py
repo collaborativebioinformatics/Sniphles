@@ -158,7 +158,7 @@ def get_unphased_blocks(phase_blocks, chromosome_end_position):
         id='NOID',
         start=interval[0],
         end=interval[1],
-        phase=[],
+        phase=[None],
         status='unphased'
     ) for interval in unphased_intervals if interval[0] != interval[1]]
 
