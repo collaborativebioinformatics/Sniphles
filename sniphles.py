@@ -225,8 +225,9 @@ def sniffles(tmpdvcf, tmpbam, status):
     tmpd = tempfile.mkdtemp(prefix=f"sniffles_tmp")
     # Used default values in sniffles to filter SVs based on homozygous or heterozygous allelic frequency (AF).
     # Will not attempt to remove calls based on the FILTER field in VCF, which only shows unresovled insertion length other than PASS.
+    support = 5  # Temporary value
     subprocess.call(shlex.split(
-        f"sniffles --tmp_file {tmpd} --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {s} -m {tmpbam} -v {tmppath}"))
+        f"sniffles --tmp_file {tmpd} --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {support} -m {tmpbam} -v {tmppath}"))
     shutil.rmtree(tmpd)
     return tmppath
 
