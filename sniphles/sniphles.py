@@ -229,6 +229,7 @@ def make_bams(bam, block):
                     reads_in_block += 1
         os.close(handle)
         tmpbam.close()
+        handle.close()
         if reads_in_block > 0:
             try:
                 pysam.index(tmppath)
@@ -254,7 +255,11 @@ def get_coverage(tmpbam, block):
     subprocess.call(
         shsplit(f"mosdepth -n -x -b {tmpbed} {tmpdir}/{block.chrom}.{block.start} {tmpbam}"))
     cov = np.loadtxt(f"{tmpdir}/{block.chrom}.{block.start}.regions.bed.gz", usecols=3, dtype=float)
+<<<<<<< HEAD
     os.close(handle)
+=======
+    handle.close()
+>>>>>>> 166cec931585a5b30a829cb2870a666daad77d97
     os.remove(tmpbed)
     shutil.rmtree(tmpdir)
     return cov
@@ -281,7 +286,11 @@ def sniffles(tmpdvcf, tmpbam, status, support=5):
     handle, compressed_vcf = tempfile.mkstemp(suffix=".vcf.gz")
     subprocess.call(shsplit("bgzip -c"), stdin=c.stdout, stdout=handle)
     subprocess.call(shsplit(f"tabix {compressed_vcf}"))
+<<<<<<< HEAD
     os.close(handle)
+=======
+    handle.close()
+>>>>>>> 166cec931585a5b30a829cb2870a666daad77d97
     os.remove(tmppath)
     return compressed_vcf
 
