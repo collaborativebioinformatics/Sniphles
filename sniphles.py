@@ -158,7 +158,7 @@ def get_unphased_blocks(phase_blocks, chromosome_end_position):
         id='NOID',
         start=interval[0],
         end=interval[1],
-        phase=[None],
+        phase=['u'],
         status='unphased'
     ) for interval in unphased_intervals if interval[0] != interval[1]]
 
@@ -173,7 +173,7 @@ def make_bams(bam, chrom, phase_block):
     - the phase block to isolate
 
     And produces one or two temporary bam file(s) with the reads of this locus
-    if the locus is phased (phase_block.phase is not None)
+    if the locus is phased (phase_block.phase is not 'u'/unphased)
     then only take reads assigned to this phase
 
 
@@ -184,7 +184,7 @@ def make_bams(bam, chrom, phase_block):
     for phase in phase_block.phase:
         _, tmppath = tempfile.mkstemp(suffix=".bam")
         tmpbam = pysam.AlignmentFile(tmppath, mode='wb', template=bam)
-        if phase is None:
+        if phase == 'u':
             for read in bam.fetch(contig=chrom, start=phase_block.start, end=phase_block.end):
                 tmpbam.write(read)
         else:
