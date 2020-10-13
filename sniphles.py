@@ -1,4 +1,5 @@
 import sys
+import logging
 import argparse
 import pysam
 from collections import defaultdict
@@ -6,9 +7,14 @@ import numpy as np
 import tempfile
 import subprocess
 from shlex import split as shsplit
+from pprint import pformat
 import os
 import shutil
 from cyvcf2 import VCF, Writer
+
+# Create a custom logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class PhaseBlock(object):
@@ -30,6 +36,15 @@ def main():
     [ ] test done
     """
     args = get_args()
+
+    # Setting logging file
+    f_handler = logging.FileHandler(os.path.join(os.getcwd(), args.log_file))
+    f_handler.setLevel(logging.DEBUG)
+    f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    f_handler.setFormatter(f_format)
+    logger.addHandler(f_handler)
+    logger.info("Used params\n{}".format(pformat(vars(args))))
+    
     bam = pysam.AlignmentFile(args.bam, "rb")
     vcfs_per_chromosome = []
     for chrom_info in bam.get_index_statistics():  # Iterate over all chromosomes separately
@@ -79,6 +94,9 @@ def get_args():
     parser.add_argument("-v", "--vcf",
                         help="output VCF file",
                         required=True)
+    parser.add_argument("-l", "--log",
+                        help="Log file", dest='log_file', type=str,
+                        default="sniphles.log")
     return parser.parse_args()
 
 
