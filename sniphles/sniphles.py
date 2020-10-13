@@ -229,7 +229,6 @@ def make_bams(bam, block):
                     reads_in_block += 1
         os.close(handle)
         tmpbam.close()
-        handle.close()
         if reads_in_block > 0:
             try:
                 pysam.index(tmppath)
