@@ -80,9 +80,6 @@ def update_vcf(args):
             elif line.startswith("#"):
                 # data_out.write("##INFO=<ID=HP,Number=1,Type=Integer,Description=\"Haplotype identifier\">\n")
                 data_out.write("##INFO=<ID=CONFLICT,Number=.,Type=Integer,Description=\"The Phase is conflict or not\">\n")
-                #data_out.write("##INFO=<ID=HP_SV_READ_RATIO_1,Number=.,Type=Float,Description=\"Phase Ratio of 1\">\n")
-                #data_out.write("##INFO=<ID=HP_SV_READ_RATIO_2,Number=.,Type=Float,Description=\"Phase Ratio of 2\">\n")
-
                 data_out.write("##INFO=<ID=HP_RATIO,Number=.,Type=String,Description=\"Phase Ratio of 1\">\n")
                 data_out.write("##FORMAT=<ID=PS,Number=.,Type=Integer,Description=\"Phase set identifier\">\n")
                 data_out.write(line)
