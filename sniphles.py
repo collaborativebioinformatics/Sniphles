@@ -12,12 +12,16 @@ from cyvcf2 import VCF, Writer
 
 
 class PhaseBlock(object):
-    def __init__(self, id, start, end, phase, status):
+    def __init__(self, id, chrom, start, end, phase, status):
         self.id = id  # identifier of the phase block in the BAM, coordinate of the first SNV
+        self.chrom = chrom
         self.start = start  # first coordinate of a read in the phase block
         self.end = end  # last coordinate of a read in the phase block
-        self.phase = phase  # List with '1' and/or '2'
+        self.phase = phase  # List with 1 and/or 2
         self.status = status  # biphasic, monophasic, unphased
+
+    def __repr__(self):
+        return f"{str(self.chrom)}:{str(self.start)}-{str(self.end)} => {'-'.join([str(h) for h in self.phase])}"
 
 
 def main():
@@ -32,30 +36,30 @@ def main():
         if chrom_info.mapped > 0:  # chrom_info is a namedtuple
             chrom = chrom_info.contig
             eprint(f"Working on chromosome {chrom}")
-            tmpdmos = tempfile.mkdtemp(prefix="mosdepth")
             tmpdvcf = tempfile.mkdtemp(prefix="sniffles")
             phase_blocks = check_phase_blocks(bam, chrom)
             # Adding unphased blocks by complementing
             phase_blocks.extend(get_unphased_blocks(phase_blocks, bam.get_reference_length(chrom)))
-
+            # LOG THE NUMBER OF BIPHASIC, MONOPHASIC AND UNPHASED BLOCKS
             variant_files = defaultdict(list)
 
             for block in phase_blocks:
-                eprint(f"Working on block {block.start}-{block.end}")
-                tmpbams = make_bams(bam, chrom=chrom, phase_block=block)
+                eprint(f"Working on block {block}")
+                tmpbams = make_bams(bam, block)
                 for tmpbam, phase in zip(tmpbams, block.phase):
-                    cov = get_coverage(tmpdmos, tmpbam, chrom, block)
-                    if cov >= 10:  # XXX (Evaluation needed) Do not attempt to call SVs if coverage of phased block < 10
-                        tmpvcf = sniffles(tmpdvcf, tmpbam, block.status)
-                        variant_files[phase].append(tmpvcf)
-                    os.remove(tmpbam)
-                    os.remove(tmpbam + '.bai')
+                    if tmpbam:
+                        cov = get_coverage(tmpbam, block)
+                        # XXX (Evaluation needed) Do not attempt to call SVs if coverage of phased block < 10
+                        if cov >= 10:
+                            tmpvcf = sniffles(tmpdvcf, tmpbam, block.status)
+                            variant_files[phase].append(tmpvcf)
+                        os.remove(tmpbam)
+                        os.remove(tmpbam + '.bai')
             h1_vcf = concat_vcf(variant_files['1'])
             h2_vcf = concat_vcf(variant_files['2'])
             unph_vcf = concat_vcf(variant_files['u'])
             chrom_vcf = merge_haplotypes(h1_vcf, h2_vcf, unph_vcf)
             vcfs_per_chromosome.append(chrom_vcf)
-            shutil.rmtree(tmpdmos)
             shutil.rmtree(tmpdvcf)
     concat_vcf(vcfs_per_chromosome, output=args.vcf)
 
@@ -97,10 +101,11 @@ def check_phase_blocks(bam, chromosome):
             coordinate_dict[read.get_tag('PS')].extend([read.reference_start, read.reference_end])
     phase_blocks = []
     for block_identifier in phase_dict.keys():
-        if '1' in phase_dict[block_identifier] and '2' in phase_dict[block_identifier]:
+        if 1 in phase_dict[block_identifier] and 2 in phase_dict[block_identifier]:
             phase_blocks.append(
                 PhaseBlock(
                     id=block_identifier,
+                    chrom=chromosome,
                     start=np.amin(coordinate_dict[block_identifier]),
                     end=np.amax(coordinate_dict[block_identifier]),
                     phase=[1, 2],
@@ -110,6 +115,7 @@ def check_phase_blocks(bam, chromosome):
             phase_blocks.append(
                 PhaseBlock(
                     id=block_identifier,
+                    chrom=chromosome,
                     start=np.amin(coordinate_dict[block_identifier]),
                     end=np.amax(coordinate_dict[block_identifier]),
                     phase=[phase_dict[block_identifier][0]],
@@ -157,8 +163,10 @@ def get_unphased_blocks(phase_blocks, chromosome_end_position):
 
     unphased_intervals = zip(unphased_intervals_starts, unphased_intervals_ends)
 
+    chromosome = phase_blocks[0].chrom
     unphased_blocks = [PhaseBlock(
         id='NOID',
+        chrom=chromosome,
         start=interval[0],
         end=interval[1],
         phase=['u'],
@@ -168,7 +176,7 @@ def get_unphased_blocks(phase_blocks, chromosome_end_position):
     return sorted(unphased_blocks, key=lambda x: x.start)
 
 
-def make_bams(bam, chrom, phase_block):
+def make_bams(bam, block):
     """
     This function will take
     - the bam file
@@ -179,39 +187,48 @@ def make_bams(bam, chrom, phase_block):
     if the locus is phased (phase_block.phase is not 'u'/unphased)
     then only take reads assigned to this phase
 
+    If a bam file ends up empty, just return None for that block
 
     [x] implementation done
     [ ] test done
     """
     tmp_bam_paths = []
-    for phase in phase_block.phase:
+    for phase in block.phase:
+        reads_in_block = 0
         _, tmppath = tempfile.mkstemp(suffix=".bam")
         tmpbam = pysam.AlignmentFile(tmppath, mode='wb', template=bam)
         if phase == 'u':
-            for read in bam.fetch(contig=chrom, start=phase_block.start, end=phase_block.end):
+            for read in bam.fetch(contig=block.chrom, start=block.start, end=block.end):
                 tmpbam.write(read)
+                reads_in_block += 1
         else:
-            for read in bam.fetch(contig=chrom, start=phase_block.start, end=phase_block.end):
+            for read in bam.fetch(contig=block.chrom, start=block.start, end=block.end):
                 if read.has_tag('HP') and read.get_tag('HP') == phase:
                     tmpbam.write(read)
+                    reads_in_block += 1
         tmpbam.close()
-        pysam.index(tmppath)
-        tmp_bam_paths.append(tmppath)
+        if reads_in_block > 0:
+            pysam.index(tmppath)
+            tmp_bam_paths.append(tmppath)
+        else:
+            tmp_bam_paths.append(None)
     return tmp_bam_paths
 
 
-def get_coverage(tmpdir, tmpbam, chrom, block):
+def get_coverage(tmpbam, block):
     """
     [x] implementation done
     [ ] test done
     """
+    tmpdir = tempfile.mkdtemp(prefix="mosdepth")
     _, tmpbed = tempfile.mkstemp(suffix=".bed")
     with open(tmpbed, 'w') as outf:
-        outf.write(f"{chrom}\t{block.start}\t{block.end}\n")
+        outf.write(f"{block.chrom}\t{block.start}\t{block.end}\n")
     subprocess.call(shlex.split(
-        f"mosdepth -n -x -b {tmpbed} {tmpdir}/{chrom}.{block.start} {tmpbam}"))
-    cov = np.loadtxt(f"{tmpdir}/{chrom}.{block.start}.regions.bed.gz", usecols=3, dtype=float)
+        f"mosdepth -n -x -b {tmpbed} {tmpdir}/{block.chrom}.{block.start} {tmpbam}"))
+    cov = np.loadtxt(f"{tmpdir}/{block.chrom}.{block.start}.regions.bed.gz", usecols=3, dtype=float)
     os.remove(tmpbed)
+    shutil.rmtree(tmpdir)
     return cov
 
 
