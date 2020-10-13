@@ -16,6 +16,7 @@ from collections import Counter
 # from termcolor import colored
 #
 # init()
+#i will fix macaroni spaghetti code tomorrow )
 
 
 
