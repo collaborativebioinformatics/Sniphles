@@ -52,7 +52,7 @@ def main():
         unph_vcf = concat_vcf(variant_files['u'])
         chrom_vcf = merge_haplotypes(h1_vcf, h2_vcf, unph_vcf)
         vcfs_per_chromosome.append(chrom_vcf)
-
+    concat_vcf(vcfs_per_chromosome, output=args.vcf)
     shutil.rmtree(tmpdmos)
     shutil.rmtree(tmpdvcf)
 
@@ -227,22 +227,20 @@ def sniffles(tmpdvcf, tmpbam, status):
     return tmppath
 
 
-def concat_vcf(vcfs):
+def concat_vcf(vcfs, output=tempfile.mkstemp(suffix=".vcf")[1]):
     """
     [ ] implementation done
     [ ] test done
     """
-    tmppath = None
     if vcfs:
-        handle, tmppath = tempfile.mkstemp(suffix=".vcf")
-        cmd = 'bcftools concat {i} -o {}'.format(i=' '.join(vcfs), o=tmppath)
-        subprocess.check_output(cmd, shell=True)
-
-    # remove temp vcf files
-    for vcf in vcfs:
-        os.remove(vcf)
-
-    return tmppath
+        cmd = f"bcftools concat -a {' '.join(vcfs)} | bcftools sort -o {output}"
+        subprocess.check_output(shlex.split(cmd))
+        # remove temp vcf files
+        for vcf in vcfs:
+            os.remove(vcf)
+        return output
+    else:
+        return None
 
 
 def merge_haplotypes(H1, H2):
