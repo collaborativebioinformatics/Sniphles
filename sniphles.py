@@ -247,7 +247,8 @@ def sniffles(tmpdvcf, tmpbam, status):
     subprocess.call(shlex.split(
         f"sniffles --tmp_file {tmpd} --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {support} -m {tmpbam} -v {tmppath}"))
     shutil.rmtree(tmpd)
-    return tmppath
+    subprocess.call(shlex.split(f"bgzip {tmppath} && tabix {tmppath + '.gz'} "))
+    return tmppath + '.gz'
 
 
 def concat_vcf(vcfs, output=tempfile.mkstemp(suffix=".vcf")[1]):
