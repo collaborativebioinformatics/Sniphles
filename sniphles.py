@@ -167,16 +167,30 @@ def get_unphased_blocks(phase_blocks, chromosome_end_position):
 
 def make_bams(bam, chrom, phase_block):
     """
+    This function will take
+    - the bam file
+    - the chromosome we're working on
+    - the phase block to isolate
+
+    And produces one or two temporary bam file(s) with the reads of this locus
+    if the locus is phased (phase_block.phase is not None)
+    then only take reads assigned to this phase
+
+
     [x] implementation done
     [ ] test done
     """
     tmp_bam_paths = []
     for phase in phase_block.phase:
-        handle, tmppath = tempfile.mkstemp(suffix=".bam")
+        _, tmppath = tempfile.mkstemp(suffix=".bam")
         tmpbam = pysam.AlignmentFile(tmppath, mode='wb', template=bam)
-        for read in bam.fetch(contig=chrom, start=phase_block.start, end=phase_block.end):
-            if read.has_tag('HP') and read.get_tag('HP') == phase:
+        if phase is None:
+            for read in bam.fetch(contig=chrom, start=phase_block.start, end=phase_block.end):
                 tmpbam.write(read)
+        else:
+            for read in bam.fetch(contig=chrom, start=phase_block.start, end=phase_block.end):
+                if read.has_tag('HP') and read.get_tag('HP') == phase:
+                    tmpbam.write(read)
         tmp_bam_paths.append(tmppath)
     return tmp_bam_paths
 
