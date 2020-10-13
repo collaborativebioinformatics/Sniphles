@@ -34,8 +34,8 @@ def main():
     for chrom in bam.references:  # Iterate over all chromosomes separately
         eprint(f"Working on chromosome {chrom}")
         phase_blocks = check_phase_blocks(bam, chrom)
-        phase_blocks.extend(get_unphased_blocks(phase_blocks, 0, bam.get_reference_length(
-            chrom)))  # Adding unphased blocks by complementing
+        # Adding unphased blocks by complementing
+        phase_blocks.extend(get_unphased_blocks(phase_blocks, bam.get_reference_length(chrom)))
         variant_files = defaultdict(list)
 
         for block in phase_blocks:
@@ -113,7 +113,7 @@ def check_phase_blocks(bam, chromosome):
     return sorted(phase_blocks, key=lambda x: x.start)
 
 
-def get_unphased_blocks(phase_blocks, chromosome_start_position, chromosome_end_position):
+def get_unphased_blocks(phase_blocks, chromosome_end_position):
     """
     [x] implementation done
     [ ] test done
@@ -124,9 +124,6 @@ def get_unphased_blocks(phase_blocks, chromosome_start_position, chromosome_end_
     ----------
         phase_blocks : PhaseBlock[]
             List of known phase block instances.
-
-        chromosome_start_position : Int
-            Index for the start position of a chromosome
 
         chromosome_end_position : Int
             Index for the end position of a chromosome
@@ -139,7 +136,7 @@ def get_unphased_blocks(phase_blocks, chromosome_start_position, chromosome_end_
 
     start_positions = sorted([block.start for block in phase_blocks])
 
-    unphased_intervals_starts = [chromosome_start_position]
+    unphased_intervals_starts = [0]
     unphased_intervals_ends = []
 
     for start in start_positions:
