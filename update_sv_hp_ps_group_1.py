@@ -139,19 +139,37 @@ def update_vcf(args):
                             line_split[-1] = "{}:{}".format(line_split[-1], ",".join(ps_dict.keys()))
                             data_out.write("{}\n".format("\t".join(line_split)))
                         else: # update the gt field and ps to sv
-
-                            line_split[7] = "{info};CONFLICT={conflict}".format(info=line_split[7], conflict=0)
-                            line_split[-2] = "{}:{}".format(line_split[-2], "PS")
-                            # if values are negative then it is hp=1 1|0 else it is hp2 0|1
-                            # line_split[-1] = line_split[-1].replace("/", "|")
-                            hp_new_value = line_split[-1].split(':')
-                            if list(ps_dict.values())[0] < 1: # haplotype 1
-                                hp_new_value[0] = "1|0"
-                            else:
-                                hp_new_value[0] = "0|1"
-                            hp_new_value = ":".join(hp_new_value)
-                            line_split[-1] = "{}:{}".format(hp_new_value, ",".join(ps_dict.keys()))
-                            data_out.write("{}\n".format("\t".join(line_split)))
+                            reads = [i for i in line_split[7].split(";")  if i.startswith("RNAMES")][0].split("=",1)[-1].split(",")
+                            myvalues = list(map(hp_dic.get, reads))  # list of lists first element id hp second is ps or None in case there are no reads with hp and ps to support this sv
+                            # If any value not None
+                            total_count = len(myvalues)
+                            count_of_1s = 0
+                            count_of_2s = 0
+                            count_of_None = 0
+                            if any(myvalues): # any value is not none
+                                ps_dict = categorize_ps(myvalues)
+                                if 0 in list(ps_dict.values()): # means that the hp is conflicting do not update anything and add flag that is is conflicting
+                                    for i in myvalues:
+                                        if i is not None:
+                                            if i[0] == '1':
+                                                count_of_1s+=1
+                                            elif i[0] == '2':
+                                                count_of_2s+=1
+                                        else:
+                                            count_of_None=+1
+                                    ratios = count_of_1s,count_of_2s,count_of_None
+                                    line_split[7] = "{info};CONFLICT={conflict};HP_RATIO={hp_ratio}".format(info=line_split[7], conflict=0, hp_ratio=ratios)
+                                    line_split[-2] = "{}:{}".format(line_split[-2], "PS")
+                                    # if values are negative then it is hp=1 1|0 else it is hp2 0|1
+                                    # line_split[-1] = line_split[-1].replace("/", "|")
+                                    hp_new_value = line_split[-1].split(':')
+                                    if list(ps_dict.values())[0] < 1: # haplotype 1
+                                        hp_new_value[0] = "1|0"
+                                    else:
+                                        hp_new_value[0] = "0|1"
+                                        hp_new_value = ":".join(hp_new_value)
+                                        line_split[-1] = "{}:{}".format(hp_new_value, ",".join(ps_dict.keys()))
+                                        data_out.write("{}\n".format("\t".join(line_split)))
                     else: # all are none
                         line_split[7] = "{info};CONFLICT=2".format(info=line_split[7])
                         data_out.write("{}\n".format("\t".join(line_split)))
