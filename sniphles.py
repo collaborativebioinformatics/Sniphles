@@ -54,6 +54,7 @@ def main():
         vcfs_per_chromosome.append(chrom_vcf)
         shutil.rmtree(tmpdmos)
         shutil.rmtree(tmpdvcf)
+                    os.remove(tmpbam + '.bai')
     concat_vcf(vcfs_per_chromosome, output=args.vcf)
 
 
@@ -191,6 +192,7 @@ def make_bams(bam, chrom, phase_block):
             for read in bam.fetch(contig=chrom, start=phase_block.start, end=phase_block.end):
                 if read.has_tag('HP') and read.get_tag('HP') == phase:
                     tmpbam.write(read)
+        pysam.index(tmppath)
         tmp_bam_paths.append(tmppath)
     return tmp_bam_paths
 
