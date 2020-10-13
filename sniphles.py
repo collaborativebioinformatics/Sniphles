@@ -265,7 +265,6 @@ def sniffles(tmpdvcf, tmpbam, status, support=5):
     handle, tmppath = tempfile.mkstemp(prefix=tmpdvcf, suffix=".vcf")
     # Used default values in sniffles to filter SVs based on homozygous or heterozygous allelic frequency (AF).
     # Will not attempt to remove calls based on the FILTER field in VCF, which only shows unresovled insertion length other than PASS.
-    support = 5  # Temporary value
     FNULL = open(os.devnull, 'w')
     if status == "unphased": support *= 2
     subprocess.call(shsplit(
@@ -301,7 +300,6 @@ def merge_haplotypes(H1, H2):
     [ ] implementation done
     [ ] test done
     """
-    pass
     # Also think about removing the VCFs
 
 
