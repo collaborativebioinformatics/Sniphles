@@ -66,9 +66,11 @@ def main():
                     if tmpbam:
                         cov = get_coverage(tmpbam, block)
                         # XXX (Evaluation needed) Do not attempt to call SVs if coverage of phased block < 10
-                        if cov >= 10:
+                        if cov >= 10: ## TODO:  should be aegs.min_re
                             tmpvcf = sniffles(tmpdvcf, tmpbam, block.status)
                             variant_files[phase].append(tmpvcf)
+                        else: ## TODO: # We should implemet some logic here
+                            pass
                         os.remove(tmpbam)
                         os.remove(tmpbam + '.bai')
             h1_vcf = concat_vcf(variant_files['1'])
