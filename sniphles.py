@@ -142,13 +142,11 @@ def get_unphased_blocks(phase_blocks, chromosome_end_position):
     for start in start_positions:
         max_end_position = max([block.end for block in phase_blocks if block.start == start])
 
-        # The end positions of a known interval are the start of
+        # The end positions of a known interval are the start of an unphased region
         unphased_intervals_starts.append(max_end_position)
-        # an unphased region
 
-        # The start positions of known intervals are the end of an unphased
+        # The start positions of known intervals are the end of an unphased region
         unphased_intervals_ends.append(start)
-        # region
 
     unphased_intervals_ends.append(chromosome_end_position)
 
