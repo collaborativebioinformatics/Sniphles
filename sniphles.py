@@ -1,5 +1,5 @@
 import sys
-from argparse import ArgumentParser
+import argparse
 import pysam
 from collections import defaultdict
 import numpy as np
@@ -30,7 +30,7 @@ def main():
     for chrom in bam.references:  # Iterate over all chromosomes separately
         eprint(f"Working on chromosome {chrom}")
         phase_blocks = check_phase_blocks(bam, chrom)
-        phase_blocks.append(get_unphased_blocks(phase_blocks, 0, bam.get_reference_length(
+        phase_blocks.extend(get_unphased_blocks(phase_blocks, 0, bam.get_reference_length(
             chrom)))  # Adding unphased blocks by complementing
         variant_files = defaultdict(list)
         for block in phase_blocks:
@@ -49,9 +49,17 @@ def get_args():
     [x] implementation done
     [ ] test done
     """
-    parser = ArgumentParser(description="Use Sniffles on a phased bam to get phased SV calls")
+    parser = argparse.ArgumentParser(
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                description="Use Sniffles on a phased bam to get phased SV calls",
+                add_help=True)
     parser.add_argument("-b", "--bam", help="Phased bam to perform phased SV calling on")
     parser.add_argument("-v", "--vcf", help="output VCF file")
+
+    if len(sys.argv) == 1:
+         parser.print_help(sys.stderr)
+         sys.exit(1)
+
     return parser.parse_args()
 
 
