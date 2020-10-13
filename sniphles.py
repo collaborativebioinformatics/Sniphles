@@ -164,7 +164,7 @@ def make_bams(bam, chrom, phase_block):
         handle, tmppath = tempfile.mkstemp(suffix=".bam")
         tmpbam = pysam.AlignmentFile(tmppath, mode='wb', template=bam)
         for read in bam.fetch(contig=chrom, start=phase_block.start, end=phase_block.end):
-            if read.get_tag('HP') == phase:
+            if read.has_tag('HP') and read.get_tag('HP') == phase:
                 tmpbam.write(read)
         tmp_bam_paths.append(tmppath)
     return tmp_bam_paths
