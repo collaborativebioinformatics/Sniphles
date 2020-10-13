@@ -44,16 +44,6 @@ Overview Diagram
 
 # Installation options:
 
-We provide two options for installing <this software>: Docker or directly from Github.
-
-### Docker
-
-The Docker image contains <this software> as well as a webserver and FTP server in case you want to deploy the FTP server. It does also contain a web server for testing the <this software> main website (but should only be used for debug purposes).
-
-1. `docker pull ncbihackathons/<this software>` command to pull the image from the DockerHub
-2. `docker run ncbihackathons/<this software>` Run the docker image from the master shell script
-3. Edit the configuration files as below
-
 ### Installing <this software> from Github using Python.
 
 1. `git clone https://github.com/collaborativebioinformatics/Sniphles.git`
@@ -67,8 +57,6 @@ Python unittests are enabled, run:
 ```shell script
 python -m unittest
 ```
-
-We tested four different tools with <this software>. They can be found in [server/tools/](server/tools/) .
 
 # Additional Functionality
 
