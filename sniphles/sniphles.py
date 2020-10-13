@@ -54,7 +54,8 @@ def main():
             tmpdvcf = tempfile.mkdtemp(prefix="sniffles")
             phase_blocks = check_phase_blocks(bam, chrom)
             # Adding unphased blocks by complementing
-            phase_blocks.extend(get_unphased_blocks(phase_blocks, bam.get_reference_length(chrom), chrom))
+            phase_blocks.extend(get_unphased_blocks(
+                phase_blocks, bam.get_reference_length(chrom), chrom))
             # LOG THE NUMBER OF BIPHASIC, MONOPHASIC AND UNPHASED BLOCKS
             variant_files = defaultdict(list)
 
@@ -215,7 +216,7 @@ def make_bams(bam, block):
     tmp_bam_paths = []
     for phase in block.phase:
         reads_in_block = 0
-        _, tmppath = tempfile.mkstemp(suffix=".bam")
+        handle, tmppath = tempfile.mkstemp(suffix=".bam")
         tmpbam = pysam.AlignmentFile(tmppath, mode='wb', template=bam)
         if phase == 'u':
             for read in bam.fetch(contig=block.chrom, start=block.start, end=block.end):
@@ -227,6 +228,7 @@ def make_bams(bam, block):
                     tmpbam.write(read)
                     reads_in_block += 1
         tmpbam.close()
+        handle.close()
         if reads_in_block > 0:
             try:
                 pysam.index(tmppath)
@@ -246,12 +248,13 @@ def get_coverage(tmpbam, block):
     [ ] test done
     """
     tmpdir = tempfile.mkdtemp(prefix="mosdepth")
-    _, tmpbed = tempfile.mkstemp(suffix=".bed")
+    handle, tmpbed = tempfile.mkstemp(suffix=".bed")
     with open(tmpbed, 'w') as outf:
         outf.write(f"{block.chrom}\t{block.start}\t{block.end}\n")
     subprocess.call(
         shsplit(f"mosdepth -n -x -b {tmpbed} {tmpdir}/{block.chrom}.{block.start} {tmpbam}"))
     cov = np.loadtxt(f"{tmpdir}/{block.chrom}.{block.start}.regions.bed.gz", usecols=3, dtype=float)
+    handle.close()
     os.remove(tmpbed)
     shutil.rmtree(tmpdir)
     return cov
@@ -268,7 +271,8 @@ def sniffles(tmpdvcf, tmpbam, status, support=5):
     # Used default values in sniffles to filter SVs based on homozygous or heterozygous allelic frequency (AF).
     # Will not attempt to remove calls based on the FILTER field in VCF, which only shows unresovled insertion length other than PASS.
     FNULL = open(os.devnull, 'w')
-    if status == "unphased": support *= 2
+    if status == "unphased":
+        support *= 2
     subprocess.call(shsplit(
         f"sniffles --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {support} -m {tmpbam} -v {tmppath}"),
         stdout=FNULL,
@@ -277,6 +281,7 @@ def sniffles(tmpdvcf, tmpbam, status, support=5):
     handle, compressed_vcf = tempfile.mkstemp(suffix=".vcf.gz")
     subprocess.call(shsplit("bgzip -c"), stdin=c.stdout, stdout=handle)
     subprocess.call(shsplit(f"tabix {compressed_vcf}"))
+    handle.close()
     os.remove(tmppath)
     return compressed_vcf
 
