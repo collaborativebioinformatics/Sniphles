@@ -203,9 +203,17 @@ def concat_vcf(vcfs):
     [ ] implementation done
     [ ] test done
     """
-    pass
-    # Also think about removing the VCFs
+    tmppath = None
+    if vcfs:
+        handle, tmppath = tempfile.mkstemp(suffix=".vcf")
+        cmd = 'bcftools concat {i} -o {}'.format(i=' '.join(vcfs), o=tmppath)
+        subprocess.check_output(cmd, shell=True)
 
+    # remove temp vcf files
+    for vcf in vcfs:
+        os.remove(vcf)
+
+    return tmppath
 
 def merge_haplotypes(H1, H2):
     """
