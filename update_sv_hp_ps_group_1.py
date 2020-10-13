@@ -172,7 +172,8 @@ def update_vcf(args):
                                         line_split[-1] = "{}:{}".format(hp_new_value, ",".join(ps_dict.keys()))
                                         data_out.write("{}\n".format("\t".join(line_split)))
                     else: # all are none
-                        line_split[7] = "{info};CONFLICT=2".format(info=line_split[7])
+                        ratios = 0,0,0
+                        line_split[7] = "{info};CONFLICT=2;HP_RATIO={hp_ratio}".format(info=line_split[7], conflict=0, hp_ratio=ratios)
                         data_out.write("{}\n".format("\t".join(line_split)))
 
 
