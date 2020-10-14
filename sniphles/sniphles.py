@@ -54,7 +54,6 @@ def main():
         if chrom_info.mapped > 0:  # chrom_info is a namedtuple
             chrom = chrom_info.contig
             eprint(f"Working on chromosome {chrom}")
-            tmpdvcf = tempfile.mkdtemp(prefix="sniffles")
             phase_blocks = check_phase_blocks(bam, chrom)
             # Adding unphased blocks by complementing
             phase_blocks.extend(get_unphased_blocks(
@@ -80,7 +79,6 @@ def main():
             chrom_vcf = merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf,
                                          args.vcf)  # TODO: DOESN'T RETURN
             vcfs_per_chromosome.append(chrom_vcf)
-            shutil.rmtree(tmpdvcf)
     concat_vcf(vcfs_per_chromosome, output=args.vcf)
 
 
@@ -278,7 +276,7 @@ def get_coverage(tmpbam, block):
     return cov
 
 
-def sniffles(tmpdvcf, tmpbam, status, support=5):
+def sniffles(tmpbam, status, support=5):
     """
     [x] implementation done
     [ ] test done
@@ -287,7 +285,7 @@ def sniffles(tmpdvcf, tmpbam, status, support=5):
     Needs to be evaluated.
     For unphased regions, this number doubles.
     """
-    handle_1, tmppath = tempfile.mkstemp(prefix=tmpdvcf, suffix=".vcf")
+    handle_1, tmppath = tempfile.mkstemp(suffix=".vcf")
     # Used default values in sniffles to filter SVs based on homozygous or heterozygous allelic frequency (AF).
     # Will not attempt to remove calls based on the FILTER field in VCF, which only shows unresovled insertion length other than PASS.
     FNULL = open(os.devnull, 'w')
