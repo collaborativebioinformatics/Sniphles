@@ -70,7 +70,7 @@ def main():
                         if cov >= args.minimum_suport_read:
                             tmpvcf = sniffles(tmpdvcf, tmpbam, block.status)
                             variant_files[phase].append(tmpvcf)
-                        else:  ## TODO: # We should implemet some logic here
+                        else:  # TODO: # We should implement some logic here
                             pass
                         os.remove(tmpbam)
                         os.remove(tmpbam + '.bai')
@@ -327,7 +327,7 @@ def make_hap_bams(bam, chrom):
     """
     hap_bams = []
     outs = []
-    for h in [0,1]:
+    for h in [0, 1]:
         hap_bams.append(tempfile.mkstemp(suffix=".bam")[1])
         outs.append(pysam.AlignmentFile(hap_bams[h], mode='wb', template=bam))
     for read in bam.fetch(contig=chrom):
@@ -336,8 +336,9 @@ def make_hap_bams(bam, chrom):
                 outs[0].write(read)
             else:
                 outs[1].write(read)
-    for h in [0,1]:
+    for h in [0, 1]:
         outs[h].close()
+        #TODO: IDE COMPLAINS ON UNKNOWN INDEX
         pysam.index(hap_bams[h])
     return hap_bams
 
@@ -449,8 +450,3 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf, output_file):
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
