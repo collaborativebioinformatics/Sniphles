@@ -91,10 +91,15 @@ class PhaseBlock(object):
                 FNULL = open(os.devnull, 'w')
                 if self.status == "unphased":
                     support *= 2
-                subprocess.call(shsplit(
-                    f"sniffles --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {support} -m {tmpbam} -v {tmppath}"),
-                    stdout=FNULL,
-                    stderr=subprocess.STDOUT)
+                try:
+                    subprocess.check_output(shsplit(
+                        f"sniffles --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {support} -m {tmpbam} -v {tmppath}"),
+                        stdout=FNULL,
+                        stderr=subprocess.STDOUT)
+                except subprocess.CalledProcessError as e:
+                    eprint(f"Sniffles returned {e.returncode}")
+                    self.vcfs[phase] = None
+                    continue
                 handle_2, tmpsamp = tempfile.mkstemp()
                 with open(tmpsamp, 'w') as outf:
                     outf.write(f"{sample}")
