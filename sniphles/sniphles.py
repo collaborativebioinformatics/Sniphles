@@ -67,13 +67,10 @@ def main():
                 tmpbams = make_bams(bam, block)
                 for tmpbam, phase in zip(tmpbams, block.phase):
                     if tmpbam:
-                        cov = get_coverage(tmpbam, block)
-                        # XXX (Evaluation needed) Do not attempt to call SVs if coverage of phased block too low
-                        if cov >= args.minimum_suport_read:
-                            tmpvcf = sniffles(tmpdvcf, tmpbam, block.status)
-                            variant_files[phase].append(tmpvcf)
-                        else:  # TODO: # We should implement some logic here
-                            pass
+                        #cov = get_coverage(tmpbam, block)
+                        tmpvcf = sniffles(tmpbam, block.status,
+                                          support=args.minimum_suport_read)
+                        variant_files[phase].append(tmpvcf)
                         os.remove(tmpbam)
                         os.remove(tmpbam + '.bai')
             h1_vcf = concat_vcf(variant_files['1'])
