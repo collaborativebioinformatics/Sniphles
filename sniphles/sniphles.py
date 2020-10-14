@@ -160,7 +160,9 @@ def main():
             hbams = make_hap_bams(bam, chrom)
             chrom_vcf = merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf)
             vcfs_per_chromosome.append(chrom_vcf)
+    eprint("Merging across chromosomes")
     concat_vcf(vcfs_per_chromosome, output=args.vcf)
+    eprint("Done")
 
 
 def get_args():
@@ -318,22 +320,29 @@ def get_coverage(tmpbam, block):
     return cov
 
 
-def concat_vcf(vcfs):
+def concat_vcf(vcfs, output=None):
     """
     [X] implementation done
     [ ] test done
     """
     if vcfs:
-        handle, output = tempfile.mkstemp(suffix=".vcf")
-        c = subprocess.Popen(
-            shsplit(f"bcftools concat -a {' '.join(vcfs)}"), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        subprocess.call(shsplit(
-            f"bcftools sort -o {output}"), stdin=c.stdout, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        # remove temp vcf files
-        for vcf in vcfs:
-            os.remove(vcf)
-        os.close(handle)
-        return output
+        if output:
+            f = open(output, 'w')
+            c = subprocess.Popen(
+                shsplit(f"bcftools concat -a {' '.join(vcfs)}"), stdout=subprocess.PIPE)
+            subprocess.call(shsplit(
+                f"bcftools sort"), stdin=c.stdout, stdout=f)
+            f.close()
+        else:
+            handle, output = tempfile.mkstemp(suffix=".vcf")
+            c = subprocess.Popen(
+                shsplit(f"bcftools concat -a {' '.join(vcfs)}"), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            subprocess.call(shsplit(
+                f"bcftools sort -o {output}"), stdin=c.stdout, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            for vcf in vcfs:
+                os.remove(vcf)
+            os.close(handle)
+            return output
     else:
         assert False, "No input vcf for concat"
 
@@ -351,10 +360,12 @@ def make_hap_bams(bam, chrom):
         outs.append(pysam.AlignmentFile(hap_bams[h], mode='wb', template=bam))
     for read in bam.fetch(contig=chrom):
         if read.has_tag('HP'):
-            if read.get_tag('HP') == '1':
+            if read.get_tag('HP') == 1:
                 outs[0].write(read)
-            else:
+            elif read.get_tag('HP') == 2:
                 outs[1].write(read)
+            else:
+                assert False, f"unknown HP tag {read.get_tag('HP')}"
     for h in [0, 1]:
         outs[h].close()
         # TODO: IDE COMPLAINS ON UNKNOWN INDEX
@@ -410,6 +421,7 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
     # force calling on h1/2
     hvcfs = []
     for h in [1, 2]:
+        eprint(f"Force calling on h{h}")
         hvcfs.append(tempfile.mkstemp(suffix=f".{h}.vcf")[1])
         subprocess.call(shsplit(f"sniffles -m {hbams[h-1]} -v {hvcfs[h-1]} --Ivcf {mvcf}"))
         os.remove(hbams[h-1])
@@ -429,9 +441,11 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
         f.write("\n".join(make_header(vcf)) + "\n")
         for v in vcf:
             if v.gt_types[2] == 3:  # gt ordered by h1_vcf/h2_vcf/unphased_vcf
-                if v.gt_types[0] == 3 or v.gt_types[1] == 3:
-                    continue
-                    assert False, "at least one SV call in phased region is missing" # XXX
+                if v.gt_types[0] == 3 or v.gt_types[1] == 3: # at least one SV call in phased region is missing
+                    if v.gt_types[0] != 2 and v.gt_types[1] != 2: # HET|unkown SV call in phased region
+                        gt = "1/0"
+                    else:
+                        gt = "1|1"
                 else:
                     # if phased, each genotype has to be HOM not HET
                     if v.gt_types[0] == 1 or v.gt_types[1] == 1:
@@ -473,8 +487,7 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
     os.close(handle2)
     os.remove(rawvcf)
     os.remove(tmptxt)
-    for i, f in enumerate([h1_vcf, h2_vcf, unph_vcf] + hvcfs):
-        print(i,f)
+    for f in [h1_vcf, h2_vcf, unph_vcf] + hvcfs:
         os.remove(f)
     return chromvcf
 
