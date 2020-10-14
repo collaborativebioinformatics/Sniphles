@@ -77,7 +77,8 @@ def main():
             h1_vcf = concat_vcf(variant_files['1'])
             h2_vcf = concat_vcf(variant_files['2'])
             unph_vcf = concat_vcf(variant_files['u'])
-            chrom_vcf = merge_haplotypes(h1_vcf, h2_vcf, unph_vcf)
+            hbams = make_hap_bams(bam, chrom)
+            chrom_vcf = merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf, args.vcf)  #TODO: DOESN'T RETURN
             vcfs_per_chromosome.append(chrom_vcf)
             shutil.rmtree(tmpdvcf)
     concat_vcf(vcfs_per_chromosome, output=args.vcf)
@@ -249,6 +250,7 @@ def make_bams(bam, block):
         os.close(handle)
         tmpbam.close()
         if reads_in_block > 0:
+            #TODO: IDE COMPLAINS ABOUT INDEX NOT SET IN INIT
             pysam.index(tmppath)
             tmp_bam_paths.append(tmppath)
         else:
@@ -317,13 +319,138 @@ def concat_vcf(vcfs, output=tempfile.mkstemp(suffix=".vcf")[1]):
         return None
 
 
-def merge_haplotypes(H1, H2):
+def make_hap_bams(bam, chrom):
+    """
+    [x] implementation done
+    [ ] test done
+    Partition reads according to phase; discard unphased
+    """
+    hap_bams = []
+    outs = []
+    for h in [0,1]:
+        hap_bams.append(tempfile.mkstemp(suffix=".bam")[1])
+        outs.append(pysam.AlignmentFile(hap_bams[h], mode='wb', template=bam))
+    for read in bam.fetch(contig=chrom):
+        if read.has_tag('HP'):
+            if read.get_tag('HP') == '1':
+                outs[0].write(read)
+            else:
+                outs[1].write(read)
+    for h in [0,1]:
+        outs[h].close()
+        pysam.index(hap_bams[h])
+    return hap_bams
+
+
+def make_header(vcf, name="SAMPLE"):
+    header = ['##fileformat=VCFv4.1', '##source=sniphles']
+    for line in vcf.header_iter():
+        if line["HeaderType"] == 'CONTIG':
+            header.append('##contig=<ID={}>'.format(line['ID']))
+    header.extend([
+        '##ALT=<ID=DEL,Description="Deletion">',
+        '##ALT=<ID=DUP,Description="Duplication">',
+        '##ALT=<ID=INV,Description="Inversion">',
+        '##ALT=<ID=BND,Description="Translocation">',
+        '##ALT=<ID=INS,Description="Insertion">',
+        '##INFO=<ID=END,Number=1,Type=Integer,Description="End of the structural variant">',
+        '##INFO=<ID=SVLEN,Number=1,Type=Float,Description="Length of the SV">',
+        '##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of the SV.">',
+        '##INFO=<ID=HAPSUPPORT,Number=1,Type=String,Description="Support per haplotype.">',
+        '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">',
+        '#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t{}'.format(name)])
+    return header
+
+
+def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf, output_file):
     """
     [ ] implementation done
     [ ] test done
     """
-    # Also think about removing the VCFs
+    # Also think about removing the VCFs, hbams
+
+    # merging h1/2
+    _, tmptxt = tempfile.mkstemp(suffix=".txt")
+    _, mvcf = tempfile.mkstemp(suffix=".vcf")
+    np.savetxt(tmptxt, h1_vcf + h2_vcf, fmt='%s')
+    # Parameters explained:
+    # maximum allowed distance btwn SVs < 1000 bp
+    # do not remove SV even if types are different e.g. INS in h1, DEL in h2
+    # do not remove SV based on strand
+    # do not estimate distance based on the size of SV
+    # minimal size of SV >= 0 bp
+    subprocess.call(shsplit(f"SURVIVOR merge {tmptxt} 1000 1 0 0 0 0 {mvcf}"))
+
+    # force calling on h1/2
+    hvcfs = []
+    for h in [1,2]:
+        hvcfs.append(tempfile.mkstemp(suffix=f".{h}.vcf")[1])
+        subprocess.call(shsplit(f"sniffles -m {hbams[h-1]} -v {hvcfs[h-1]} --Ivcf {mvcf}"))
+        os.remove(hbams[h-1])
+    os.remove(mvcf)
+
+    # merging w/ unph_vcf
+    _, tmptxt = tempfile.mkstemp(suffix=".txt")
+    _, rawvcf = tempfile.mkstemp(suffix=".vcf")
+    np.savetxt(tmptxt, hvcfs + unph_vcf, fmt='%s')
+    subprocess.call(shsplit(f"SURVIVOR merge {tmptxt} 10 1 0 0 0 0 {rawvcf}"))
+    allele_dict = {0: 'HOM_REF', 1: 'HET', 2: 'HOM_ALT', 3: 'UNKNOWN'} # XXX 2,3 swapped compared to @wouter haplomerge.py
+    unph_gt_to_str = {1: "1/0", 2: "1/1"}
+    ph_gt_to_str = {0: {2: "0|1"}, 2: {0: "1|0", 2: "1|1"}}
+    vcf = VCF(rawvcf)
+    with open(output_file, 'w') as f:
+        f.write("\n".join(make_header(vcf)))
+        for v in vcf:
+            if v.gt_types[2] == 3: # gt ordered by h1_vcf/h2_vcf/unphased_vcf
+                if v.gt_types[0] == 3 or v.gt_types[1] == 3:
+                    assert False, "at least one SV call in phased region is missing"
+                else:
+                    if v.gt_types[0] == 1 or v.gt_types[1] == 1: # if phased, each genotype has to be HOM not HET
+                        eprint(f"{v.ID} w/ gt {v.gt_types} removed due to HET called on a haplotype")
+                        continue
+                    elif v.gt_types[0] == 0 and v.gt_types[1] == 0: # not a variant
+                        eprint(f"{v.ID} w/ gt {v.gt_types} removed due to no variant")
+                        continue
+                    else:
+                        gt = ph_gt_to_str[v.gt_types[0]][v.gt_types[1]]
+            else:
+                if v.gt_types[0] != 3 or v.gt_types[1] != 3:
+                    assert False, "duplicate calls from phased and unphased regions"
+                else: # if unphased, HOM and HET are both valid
+                    if v.gt_types[2] == 0: # not a variant
+                        eprint(f"{v.ID} w/ gt {v.gt_types} removed due to no variant")
+                        continue
+                    else:
+                        gt = unph_gt_to_str[v.gt_types[2]]
+
+            info = {'SVLEN': v.INFO.get('SVLEN'),
+                    'END': v.end,
+                    'SVTYPE': v.INFO.get('SVTYPE'),
+                    'HAPSUPPORT': '-'.join([allele_dict[gt] for gt in v.gt_types])}
+            f.write("{chrom}\t{pos}\t{idf}\t{ref}\t{alt}\t{q}\t{filt}\t{info}\t{form}\t{sam}\n"
+                .format(
+                    chrom=v.CHROM,
+                    pos=v.start,
+                    idf=v.ID,
+                    ref=v.REF,
+                    alt=','.join(v.ALT),
+                    q=v.QUAL or '.',
+                    filt='.',
+                    info=';'.join(['{}={}'.format(k, v) for k, v in info.items()]),
+                    form='GT',
+                    sam=gt))
+    vcf.close()
+    os.remove(rawvcf)
+    os.remove(tmptxt)
+
+    for f in h1_vcf + h2_vcf + unph_vcf + hvcfs + hbams:
+        os.remove(f)
 
 
 if __name__ == '__main__':
     main()
+
+
+
+
+
