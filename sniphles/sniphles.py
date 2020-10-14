@@ -66,8 +66,9 @@ def main():
                 tmpbams = make_bams(bam, block)
                 for tmpbam, phase in zip(tmpbams, block.phase):
                     if tmpbam:
-                        #cov = get_coverage(tmpbam, block)
+                        # cov = get_coverage(tmpbam, block)
                         tmpvcf = sniffles(tmpbam, block.status,
+                                          sample=args.name,
                                           support=args.minimum_suport_read)
                         variant_files[phase].append(tmpvcf)
                         os.remove(tmpbam)
@@ -105,6 +106,9 @@ def get_args():
                         dest='minimum_suport_read',
                         type=int,
                         default=4)
+    parser.add_argument("-n", "--name",
+                        help="Sample name of output VCF",
+                        required=True)
     return parser.parse_args()
 
 
@@ -276,7 +280,7 @@ def get_coverage(tmpbam, block):
     return cov
 
 
-def sniffles(tmpbam, status, support=5):
+def sniffles(tmpbam, status, sample="foo", support=5):
     """
     [x] implementation done
     [ ] test done
@@ -295,13 +299,20 @@ def sniffles(tmpbam, status, support=5):
         f"sniffles --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {support} -m {tmpbam} -v {tmppath}"),
         stdout=FNULL,
         stderr=subprocess.STDOUT)
-    c = subprocess.Popen(shsplit(f"bcftools sort {tmppath}"), stdout=subprocess.PIPE)
-    handle_2, compressed_vcf = tempfile.mkstemp(suffix=".vcf.gz")
-    subprocess.call(shsplit("bgzip -c"), stdin=c.stdout, stdout=handle_2)
+    handle_2, tmpsamp = tempfile.mkstemp()
+    with open(tmpsamp, 'w') as outf:
+        outf.write(f"{sample}")
+    c1 = subprocess.Popen(
+        shsplit(f"bcftools reheader -s {tmpsamp} {tmppath}"), stdout=subprocess.PIPE)
+    c2 = subprocess.Popen(shsplit(f"bcftools sort"), stdin=c1.stdout, stdout=subprocess.PIPE)
+    handle_3, compressed_vcf = tempfile.mkstemp(suffix=".vcf.gz")
+    subprocess.call(shsplit("bgzip -c"), stdin=c2.stdout, stdout=handle_3)
     subprocess.call(shsplit(f"tabix {compressed_vcf}"))
     os.close(handle_1)
     os.close(handle_2)
+    os.close(handle_3)
     os.remove(tmppath)
+    os.remove(tmpsamp)
     return compressed_vcf
 
 
