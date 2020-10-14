@@ -102,7 +102,8 @@ class PhaseBlock(object):
                     shsplit(f"bcftools reheader -s {tmpsamp} {tmppath}"), stdout=subprocess.PIPE)
                 c2 = subprocess.Popen(shsplit(f"bcftools sort"),
                                       stdin=c1.stdout, stdout=subprocess.PIPE)
-                handle_3, compressed_vcf = tempfile.mkstemp(prefix=self.__repr__, suffix=".vcf.gz")
+                handle_3, compressed_vcf = tempfile.mkstemp(prefix=self.__repr__(),
+                                                            suffix=".vcf.gz")
                 subprocess.call(shsplit("bgzip -c"), stdin=c2.stdout, stdout=handle_3)
                 subprocess.call(shsplit(f"tabix {compressed_vcf}"))
                 os.close(handle_1)
