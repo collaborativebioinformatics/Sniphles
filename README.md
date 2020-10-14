@@ -25,6 +25,11 @@ BONUS:
 
 ## Intro statement
 
+Phasing infers the correct cis or trans relationship between differing chromosomal loci allowing for haplotype reconstruction. Protocols and programs utilizing molecular phasing (chromosomal separation at the bench before sequencing), pedigree-based phasing (matching parental and offspring genotypes to understand the haplotype), population-based phasing (using genotype data from large cohorts to infer haplotypes), and read-based phasing (mapping sequencing reads with the same variants to construct a haplotype) are all successful approaches to phasing next generation sequencing data. The long reads of 3rd generation sequencing has bolstered our ability to phase longer and more comprehensive haplotype blocks. More comprehensive haplotype blocks increase our ability to accurately phase structural variants.
+
+The goal of this project is to integrate a program with the Sniffles SV caller to properly phase structural variants and augment the ability of Sniffles to accurately call SVs. While tools such as WhatsHap and LongShot focus on phasing SNVs in PacBio and ONT long-read data, Sniphles focuses on phasing SVs.  
+
+
 ## What's the problem?
 
 ## Why should we solve it?
