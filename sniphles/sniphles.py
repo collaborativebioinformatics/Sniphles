@@ -66,7 +66,7 @@ def main():
                 for tmpbam, phase in zip(tmpbams, block.phase):
                     if tmpbam:
                         cov = get_coverage(tmpbam, block)
-                        # XXX (Evaluation needed) Do not attempt to call SVs if coverage of phased block < 10
+                        # XXX (Evaluation needed) Do not attempt to call SVs if coverage of phased block too low
                         if cov >= args.minimum_suport_read:
                             tmpvcf = sniffles(tmpdvcf, tmpbam, block.status)
                             variant_files[phase].append(tmpvcf)
@@ -78,7 +78,8 @@ def main():
             h2_vcf = concat_vcf(variant_files['2'])
             unph_vcf = concat_vcf(variant_files['u'])
             hbams = make_hap_bams(bam, chrom)
-            chrom_vcf = merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf, args.vcf)  #TODO: DOESN'T RETURN
+            chrom_vcf = merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf,
+                                         args.vcf)  # TODO: DOESN'T RETURN
             vcfs_per_chromosome.append(chrom_vcf)
             shutil.rmtree(tmpdvcf)
     concat_vcf(vcfs_per_chromosome, output=args.vcf)
@@ -250,7 +251,7 @@ def make_bams(bam, block):
         os.close(handle)
         tmpbam.close()
         if reads_in_block > 0:
-            #TODO: IDE COMPLAINS ABOUT INDEX NOT SET IN INIT
+            # TODO: IDE COMPLAINS ABOUT INDEX NOT SET IN INIT
             pysam.index(tmppath)
             tmp_bam_paths.append(tmppath)
         else:
@@ -338,7 +339,7 @@ def make_hap_bams(bam, chrom):
                 outs[1].write(read)
     for h in [0, 1]:
         outs[h].close()
-        #TODO: IDE COMPLAINS ON UNKNOWN INDEX
+        # TODO: IDE COMPLAINS ON UNKNOWN INDEX
         pysam.index(hap_bams[h])
     return hap_bams
 
@@ -388,7 +389,7 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf, output_file):
 
     # force calling on h1/2
     hvcfs = []
-    for h in [1,2]:
+    for h in [1, 2]:
         hvcfs.append(tempfile.mkstemp(suffix=f".{h}.vcf")[1])
         subprocess.call(shsplit(f"sniffles -m {hbams[h-1]} -v {hvcfs[h-1]} --Ivcf {mvcf}"))
         os.remove(hbams[h-1])
@@ -399,21 +400,23 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf, output_file):
     _, rawvcf = tempfile.mkstemp(suffix=".vcf")
     np.savetxt(tmptxt, hvcfs + unph_vcf, fmt='%s')
     subprocess.call(shsplit(f"SURVIVOR merge {tmptxt} 10 1 0 0 0 0 {rawvcf}"))
-    allele_dict = {0: 'HOM_REF', 1: 'HET', 2: 'HOM_ALT', 3: 'UNKNOWN'} # XXX 2,3 swapped compared to @wouter haplomerge.py
+    # XXX 2,3 swapped compared to @wouter haplomerge.py
+    allele_dict = {0: 'HOM_REF', 1: 'HET', 2: 'HOM_ALT', 3: 'UNKNOWN'}
     unph_gt_to_str = {1: "1/0", 2: "1/1"}
     ph_gt_to_str = {0: {2: "0|1"}, 2: {0: "1|0", 2: "1|1"}}
     vcf = VCF(rawvcf)
     with open(output_file, 'w') as f:
         f.write("\n".join(make_header(vcf)))
         for v in vcf:
-            if v.gt_types[2] == 3: # gt ordered by h1_vcf/h2_vcf/unphased_vcf
+            if v.gt_types[2] == 3:  # gt ordered by h1_vcf/h2_vcf/unphased_vcf
                 if v.gt_types[0] == 3 or v.gt_types[1] == 3:
                     assert False, "at least one SV call in phased region is missing"
                 else:
-                    if v.gt_types[0] == 1 or v.gt_types[1] == 1: # if phased, each genotype has to be HOM not HET
+                    # if phased, each genotype has to be HOM not HET
+                    if v.gt_types[0] == 1 or v.gt_types[1] == 1:
                         eprint(f"{v.ID} w/ gt {v.gt_types} removed due to HET called on a haplotype")
                         continue
-                    elif v.gt_types[0] == 0 and v.gt_types[1] == 0: # not a variant
+                    elif v.gt_types[0] == 0 and v.gt_types[1] == 0:  # not a variant
                         eprint(f"{v.ID} w/ gt {v.gt_types} removed due to no variant")
                         continue
                     else:
@@ -421,8 +424,8 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf, output_file):
             else:
                 if v.gt_types[0] != 3 or v.gt_types[1] != 3:
                     assert False, "duplicate calls from phased and unphased regions"
-                else: # if unphased, HOM and HET are both valid
-                    if v.gt_types[2] == 0: # not a variant
+                else:  # if unphased, HOM and HET are both valid
+                    if v.gt_types[2] == 0:  # not a variant
                         eprint(f"{v.ID} w/ gt {v.gt_types} removed due to no variant")
                         continue
                     else:
@@ -433,17 +436,17 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf, output_file):
                     'SVTYPE': v.INFO.get('SVTYPE'),
                     'HAPSUPPORT': '-'.join([allele_dict[gt] for gt in v.gt_types])}
             f.write("{chrom}\t{pos}\t{idf}\t{ref}\t{alt}\t{q}\t{filt}\t{info}\t{form}\t{sam}\n"
-                .format(
-                    chrom=v.CHROM,
-                    pos=v.start,
-                    idf=v.ID,
-                    ref=v.REF,
-                    alt=','.join(v.ALT),
-                    q=v.QUAL or '.',
-                    filt='.',
-                    info=';'.join(['{}={}'.format(k, v) for k, v in info.items()]),
-                    form='GT',
-                    sam=gt))
+                    .format(
+                        chrom=v.CHROM,
+                        pos=v.start,
+                        idf=v.ID,
+                        ref=v.REF,
+                        alt=','.join(v.ALT),
+                        q=v.QUAL or '.',
+                        filt='.',
+                        info=';'.join(['{}={}'.format(k, v) for k, v in info.items()]),
+                        form='GT',
+                        sam=gt))
     vcf.close()
     os.remove(rawvcf)
     os.remove(tmptxt)
