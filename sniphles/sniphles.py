@@ -174,13 +174,15 @@ def get_unphased_blocks(phase_blocks, chromosome_end_position, chromosome_id):
             Intervals in a chromosome where the phase is not known as list of PhaseBlock instances.
     """
 
-    def compare_and_update_phased_blocks(previous, trailing):
-        if previous.start <= trailing.start <= previous.end:
+    def compare_and_update_phased_blocks(previous, current):
+        if previous.start <= current.start <= previous.end:
+            """As the input is sorted we check if the start of the current block lies within the previous block.
+            If that is the case we extend to the start of the previous interval to span the whole region."""
             previous.end = max(previous.end,
-                               trailing.end)  # merge these and extend the end of the phased block, disregards phases.
+                               current.end)  # merge these and extend the end of the phased block, disregards phases.
             return previous
         else:
-            return trailing
+            return current
 
     phase_blocks = list(itertools.accumulate(phase_blocks, compare_and_update_phased_blocks))
 
