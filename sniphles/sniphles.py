@@ -318,12 +318,13 @@ def get_coverage(tmpbam, block):
     return cov
 
 
-def concat_vcf(vcfs, output=tempfile.mkstemp(suffix=".vcf")[1]):
+def concat_vcf(vcfs):
     """
     [X] implementation done
     [ ] test done
     """
     if vcfs:
+        handle, output = tempfile.mkstemp(suffix=".vcf")
         c = subprocess.Popen(
             shsplit(f"bcftools concat -a {' '.join(vcfs)}"), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         subprocess.call(shsplit(
@@ -331,6 +332,7 @@ def concat_vcf(vcfs, output=tempfile.mkstemp(suffix=".vcf")[1]):
         # remove temp vcf files
         for vcf in vcfs:
             os.remove(vcf)
+        os.close(handle)
         return output
     else:
         assert False, "No input vcf for concat"
@@ -470,7 +472,8 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
     os.close(handle2)
     os.remove(rawvcf)
     os.remove(tmptxt)
-    for f in [h1_vcf, h2_vcf, unph_vcf] + hvcfs + hbams:
+    for i, f in enumerate([h1_vcf, h2_vcf, unph_vcf] + hvcfs + hbams):
+        print(i,f)
         os.remove(f)
     return chromvcf
 
