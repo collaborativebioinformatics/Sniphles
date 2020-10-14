@@ -394,7 +394,7 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
     # merging h1/2
     handle1, tmptxt = tempfile.mkstemp(suffix=".txt")
     handle2, mvcf = tempfile.mkstemp(suffix=".vcf")
-    np.savetxt(tmptxt, [h1_vcf + h2_vcf], fmt='%s')
+    np.savetxt(tmptxt, [h1_vcf, h2_vcf], fmt='%s')
     # Parameters explained:
     # maximum allowed distance btwn SVs < 1000 bp
     # do not remove SV even if types are different e.g. INS in h1, DEL in h2
@@ -470,7 +470,7 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
     os.close(handle2)
     os.remove(rawvcf)
     os.remove(tmptxt)
-    for i, f in enumerate([h1_vcf, h2_vcf, unph_vcf] + hvcfs + hbams):
+    for f in [h1_vcf, h2_vcf, unph_vcf] + hvcfs + hbams:
         os.remove(f)
     return chromvcf
 
