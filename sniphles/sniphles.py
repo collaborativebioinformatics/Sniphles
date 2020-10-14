@@ -125,7 +125,7 @@ def check_phase_blocks(bam, chromosome):
     coordinate_dict = defaultdict(list)
     for read in bam.fetch(contig=chromosome):
         if read.has_tag('HP'):
-            phase_dict[read.get_tag('PS')].append(read.get_tag('HP'))
+            phase_dict[read.get_tag('PS')].append(str(read.get_tag('HP')))
             coordinate_dict[read.get_tag('PS')].extend([read.reference_start, read.reference_end])
     phase_blocks = []
     for block_identifier in phase_dict.keys():
