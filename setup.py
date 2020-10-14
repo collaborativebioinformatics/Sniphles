@@ -7,14 +7,14 @@ setup(name='sniphles',
       author='The Pan-Structural Variation Hackathon',
       author_email='decosterwouter@gmail.com',
       license='MIT',
-      ### Dependencies
+      # Dependencies
       install_requires=[
           'pysam',
           'numpy',
           'cyvcf2',
-          'mosdepth',
-          'sniffles',
-          'xsamtools',
+          # 'mosdepth',
+          # 'sniffles',
+          # 'xsamtools',
       ],
       packages=find_packages(exclude=('tests',)),
       python_requires='>=3.6',
