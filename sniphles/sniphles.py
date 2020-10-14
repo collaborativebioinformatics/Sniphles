@@ -28,9 +28,91 @@ class PhaseBlock(object):
         assert isinstance(phase[0], str), "Phase should be a string!"
         self.phase = phase  # List with 1 and/or 2
         self.status = status  # biphasic, monophasic, unphased
+        self.bams = []
+        self.vcfs = {k: None for k in ['1', '2', 'u']}
 
     def __repr__(self):
         return f"{str(self.chrom)}:{str(self.start)}-{str(self.end)} => {'-'.join([str(h) for h in self.phase])}"
+
+    def make_bams(self, bam):
+        """
+        This function will take
+        - the bam file
+
+        And produces one or two temporary bam file(s) with the reads of this locus
+        if the locus is phased (phase_block.phase is not 'u'/unphased)
+        then only take reads assigned to this phase
+
+        If a bam file ends up empty, just return None for that block
+
+        [x] implementation done
+        [ ] test done
+        """
+        tmp_bam_paths = []
+        for phase in self.phase:
+            reads_in_block = 0
+            handle, tmppath = tempfile.mkstemp(suffix=".bam")
+            tmpbam = pysam.AlignmentFile(tmppath, mode='wb', template=bam)
+            if phase == 'u':
+                for read in bam.fetch(contig=self.chrom, start=self.start, end=self.end):
+                    tmpbam.write(read)
+                    reads_in_block += 1
+            else:
+                phase = int(phase)
+                for read in bam.fetch(contig=self.chrom, start=self.start, end=self.end):
+                    if read.has_tag('HP') and read.get_tag('HP') == phase:
+                        tmpbam.write(read)
+                        reads_in_block += 1
+            os.close(handle)
+            tmpbam.close()
+            if reads_in_block > 0:
+                # TODO: IDE COMPLAINS ABOUT INDEX NOT SET IN INIT
+                pysam.index(tmppath)
+                tmp_bam_paths.append(tmppath)
+            else:
+                tmp_bam_paths.append(None)
+        self.bams = tmp_bam_paths
+
+    def sniffles(self, sample="foo", support=5):
+        """
+        [x] implementation done
+        [ ] test done
+
+        support: minimal number of supporting reads.
+        Needs to be evaluated.
+        For unphased regions, this number doubles.
+        """
+        for tmpbam, phase in zip(self.bams, self.phase):
+            if tmpbam:
+                # cov = get_coverage(tmpbam, block)
+                handle_1, tmppath = tempfile.mkstemp(suffix=".vcf")
+                # Used default values in sniffles to filter SVs based on homozygous or heterozygous allelic frequency (AF).
+                # Will not attempt to remove calls based on the FILTER field in VCF, which only shows unresovled insertion length other than PASS.
+                FNULL = open(os.devnull, 'w')
+                if self.status == "unphased":
+                    support *= 2
+                subprocess.call(shsplit(
+                    f"sniffles --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {support} -m {tmpbam} -v {tmppath}"),
+                    stdout=FNULL,
+                    stderr=subprocess.STDOUT)
+                handle_2, tmpsamp = tempfile.mkstemp()
+                with open(tmpsamp, 'w') as outf:
+                    outf.write(f"{sample}")
+                c1 = subprocess.Popen(
+                    shsplit(f"bcftools reheader -s {tmpsamp} {tmppath}"), stdout=subprocess.PIPE)
+                c2 = subprocess.Popen(shsplit(f"bcftools sort"),
+                                      stdin=c1.stdout, stdout=subprocess.PIPE)
+                handle_3, compressed_vcf = tempfile.mkstemp(suffix=".vcf.gz")
+                subprocess.call(shsplit("bgzip -c"), stdin=c2.stdout, stdout=handle_3)
+                subprocess.call(shsplit(f"tabix {compressed_vcf}"))
+                os.close(handle_1)
+                os.close(handle_2)
+                os.close(handle_3)
+                os.remove(tmppath)
+                os.remove(tmpsamp)
+                os.remove(tmpbam)
+                os.remove(tmpbam + '.bai')
+                self.vcfs[phase] = compressed_vcf
 
 
 def main():
@@ -63,22 +145,15 @@ def main():
 
             for block in phase_blocks:
                 eprint(f"Working on block {block}")
-                tmpbams = make_bams(bam, block)
-                for tmpbam, phase in zip(tmpbams, block.phase):
-                    if tmpbam:
-                        # cov = get_coverage(tmpbam, block)
-                        tmpvcf = sniffles(tmpbam, block.status,
-                                          sample=args.name,
-                                          support=args.minimum_suport_read)
-                        variant_files[phase].append(tmpvcf)
-                        os.remove(tmpbam)
-                        os.remove(tmpbam + '.bai')
+                block.make_bams(bam)
+                block.sniffles(sample=args.name, support=args.minimum_suport_read)
+
             eprint(f"Concatenating VCFs of {chrom}, haplotype 1")
-            h1_vcf = concat_vcf(variant_files['1'])
+            h1_vcf = concat_vcf([ph.vcfs['1'] for ph in phase_blocks if ph.vcfs['1']])
             eprint(f"Concatenating VCFs of {chrom}, haplotype 2")
-            h2_vcf = concat_vcf(variant_files['2'])
+            h2_vcf = concat_vcf([ph.vcfs['2'] for ph in phase_blocks if ph.vcfs['2']])
             eprint(f"Concatenating VCFs of {chrom}, unphased")
-            unph_vcf = concat_vcf(variant_files['u'])
+            unph_vcf = concat_vcf([ph.vcfs['u'] for ph in phase_blocks if ph.vcfs['u']])
             eprint(f"Merging haplotypes for {chrom}")
             hbams = make_hap_bams(bam, chrom)
             chrom_vcf = merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf,
@@ -224,48 +299,6 @@ def get_unphased_blocks(phase_blocks, chromosome_end_position, chromosome_id):
     return sorted(unphased_blocks, key=lambda x: x.start)
 
 
-def make_bams(bam, block):
-    """
-    This function will take
-    - the bam file
-    - the chromosome we're working on
-    - the phase block to isolate
-
-    And produces one or two temporary bam file(s) with the reads of this locus
-    if the locus is phased (phase_block.phase is not 'u'/unphased)
-    then only take reads assigned to this phase
-
-    If a bam file ends up empty, just return None for that block
-
-    [x] implementation done
-    [ ] test done
-    """
-    tmp_bam_paths = []
-    for phase in block.phase:
-        reads_in_block = 0
-        handle, tmppath = tempfile.mkstemp(suffix=".bam")
-        tmpbam = pysam.AlignmentFile(tmppath, mode='wb', template=bam)
-        if phase == 'u':
-            for read in bam.fetch(contig=block.chrom, start=block.start, end=block.end):
-                tmpbam.write(read)
-                reads_in_block += 1
-        else:
-            phase = int(phase)
-            for read in bam.fetch(contig=block.chrom, start=block.start, end=block.end):
-                if read.has_tag('HP') and read.get_tag('HP') == phase:
-                    tmpbam.write(read)
-                    reads_in_block += 1
-        os.close(handle)
-        tmpbam.close()
-        if reads_in_block > 0:
-            # TODO: IDE COMPLAINS ABOUT INDEX NOT SET IN INIT
-            pysam.index(tmppath)
-            tmp_bam_paths.append(tmppath)
-        else:
-            tmp_bam_paths.append(None)
-    return tmp_bam_paths
-
-
 def get_coverage(tmpbam, block):
     """
     [x] implementation done
@@ -282,42 +315,6 @@ def get_coverage(tmpbam, block):
     os.remove(tmpbed)
     shutil.rmtree(tmpdir)
     return cov
-
-
-def sniffles(tmpbam, status, sample="foo", support=5):
-    """
-    [x] implementation done
-    [ ] test done
-
-    support: minimal number of supporting reads.
-    Needs to be evaluated.
-    For unphased regions, this number doubles.
-    """
-    handle_1, tmppath = tempfile.mkstemp(suffix=".vcf")
-    # Used default values in sniffles to filter SVs based on homozygous or heterozygous allelic frequency (AF).
-    # Will not attempt to remove calls based on the FILTER field in VCF, which only shows unresovled insertion length other than PASS.
-    FNULL = open(os.devnull, 'w')
-    if status == "unphased":
-        support *= 2
-    subprocess.call(shsplit(
-        f"sniffles --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {support} -m {tmpbam} -v {tmppath}"),
-        stdout=FNULL,
-        stderr=subprocess.STDOUT)
-    handle_2, tmpsamp = tempfile.mkstemp()
-    with open(tmpsamp, 'w') as outf:
-        outf.write(f"{sample}")
-    c1 = subprocess.Popen(
-        shsplit(f"bcftools reheader -s {tmpsamp} {tmppath}"), stdout=subprocess.PIPE)
-    c2 = subprocess.Popen(shsplit(f"bcftools sort"), stdin=c1.stdout, stdout=subprocess.PIPE)
-    handle_3, compressed_vcf = tempfile.mkstemp(suffix=".vcf.gz")
-    subprocess.call(shsplit("bgzip -c"), stdin=c2.stdout, stdout=handle_3)
-    subprocess.call(shsplit(f"tabix {compressed_vcf}"))
-    os.close(handle_1)
-    os.close(handle_2)
-    os.close(handle_3)
-    os.remove(tmppath)
-    os.remove(tmpsamp)
-    return compressed_vcf
 
 
 def concat_vcf(vcfs, output=tempfile.mkstemp(suffix=".vcf")[1]):
