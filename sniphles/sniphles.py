@@ -141,7 +141,6 @@ def main():
             phase_blocks.extend(get_unphased_blocks(
                 phase_blocks, bam.get_reference_length(chrom), chrom))
             # LOG THE NUMBER OF BIPHASIC, MONOPHASIC AND UNPHASED BLOCKS
-            variant_files = defaultdict(list)
 
             for block in phase_blocks:
                 eprint(f"Working on block {block}")
