@@ -25,7 +25,7 @@ Overview Diagram
 
 # Software Workflow Diagram
 
-![Sniphles](./plots/Sniphles.png)
+![Sniphles](plots/sn.png)
 
 
 
