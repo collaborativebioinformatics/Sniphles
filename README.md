@@ -1,19 +1,9 @@
 ![logo](./plots/sniphles-logo.png)
 
-# Sniphles
 
-Sniples: Using Sniffles - but phased
-- Start from a BAM with phase per read annotated (e.g. from WhatsHap, LongShot)
-- Identify phase blocks and split in monophasic (homozygous), diphasic (heterozygous) and unphased blocks
-- Loop over haplotype blogs, split BAM using temporary files and make phased bams => good opportunity for massive parallelization
-- run sniffles
-- filtering
-- concatenating the parts
-- merging haplotypes back together using SURVIVOR and force-calling Sniffles
+# Main idea
 
-BONUS: 
-- can handle cram input (Sniffles CAN'T)
-- will output a correctly SORTED VCF (Sniffles doesn't care)
+![workflow](./plots/SV_Phasing.png)
 
 ## Please cite our work -- here is the ICMJE Standard Citation:
 
@@ -33,15 +23,52 @@ The goal of this project is to integrate a program with the Sniffles SV caller t
 
 Overview Diagram
 
-# How to use <this software>
+# Software Workflow Diagram
+
+![workflow](./plots/Sniphles.png)
+
+
 
 We used Princess (ref) to align, detect and phase SNVs and SVs from PacBio HiFi reads. The produced Bam from the previous step is the input for Sniphles, where pysam  version xx (ref) was used for alignment.   For each phase block we used the mosdepth version xx (ref) to detect coverage. Later, we called SVs using Sniffles version xx (ref) with the adequate numbers of reads to support SV. The identified SVs per phase block were sorted and concatenated using bcftools version xx (ref), and both the haplotypes were merged using SURVIVOR version xx (ref).
 
 Sniphles is implemented in Python 3, it takes a haplotype Bam file as input and produces a phased and haplotypes SV file. The workflow starts with looping through the reads in the bam file and splitting them into groups based on the phasing blocks, which enables parallel analysis  of the data. The read coverage is calculated for each bam file and used to estimate the parameters for calling SVs by Sniffles.  Next, the identified SV per haplotype will be concatenated using bcftools and later both the haplotypes will be merged using SURVIVOR.
 
-# Software Workflow Diagram
+# How to use <this software>
 
-![workflow](./plots/SV_Phasing.png)
+
+`sinphles -b foo.bam -v output.vcf -n sample_name`
+
+```
+usage: sniphles.py [-h] -b BAM -v VCF [-l LOG_FILE] [-s MINIMUM_SUPORT_READ] -n NAME
+
+Use Sniffles on a phased bam to get phased SV calls
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -b BAM, --bam BAM     Phased bam to perform phased SV calling on (default: None)
+  -v VCF, --vcf VCF     output VCF file (default: None)
+  -l LOG_FILE, --log LOG_FILE
+                        Log file (default: sniphles.log)
+  -s MINIMUM_SUPORT_READ, --minimum_suport_read MINIMUM_SUPORT_READ
+                        Minimum support read to call SV equals to -s in sniffles (default: 4)
+  -n NAME, --name NAME  Sample name of output VCF (default: None)
+```
+
+# Sniphles
+
+Sniples: Using Sniffles - but phased
+- Start from a BAM with phase per read annotated (e.g. from WhatsHap, LongShot)
+- Identify phase blocks and split in monophasic (homozygous), diphasic (heterozygous) and unphased blocks
+- Loop over haplotype blogs, split BAM using temporary files and make phased bams => good opportunity for massive parallelization
+- run sniffles
+- filtering
+- concatenating the parts
+- merging haplotypes back together using SURVIVOR and force-calling Sniffles
+
+BONUS:
+- can handle cram input (Sniffles CAN'T)
+- will output a correctly SORTED VCF (Sniffles doesn't care)
+
 
 # File structure diagram
 #### _Define paths, variable names, etc_
