@@ -430,7 +430,8 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
         for v in vcf:
             if v.gt_types[2] == 3:  # gt ordered by h1_vcf/h2_vcf/unphased_vcf
                 if v.gt_types[0] == 3 or v.gt_types[1] == 3:
-                    assert False, "at least one SV call in phased region is missing"
+                    continue
+                    assert False, "at least one SV call in phased region is missing" # XXX
                 else:
                     # if phased, each genotype has to be HOM not HET
                     if v.gt_types[0] == 1 or v.gt_types[1] == 1:
@@ -472,7 +473,7 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
     os.close(handle2)
     os.remove(rawvcf)
     os.remove(tmptxt)
-    for i, f in enumerate([h1_vcf, h2_vcf, unph_vcf] + hvcfs + hbams):
+    for i, f in enumerate([h1_vcf, h2_vcf, unph_vcf] + hvcfs):
         print(i,f)
         os.remove(f)
     return chromvcf
