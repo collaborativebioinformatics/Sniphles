@@ -101,7 +101,7 @@ class PhaseBlock(object):
                 c1 = subprocess.Popen(
                     shsplit(f"bcftools reheader -s {tmpsamp} {tmppath}"), stdout=subprocess.PIPE)
                 c2 = subprocess.Popen(shsplit(f"bcftools sort"),
-                                      stdin=c1.stdout, stdout=subprocess.PIPE)
+                                      stdin=c1.stdout, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
                 handle_3, compressed_vcf = tempfile.mkstemp(prefix=self.__repr__(),
                                                             suffix=".vcf.gz")
                 subprocess.call(shsplit("bgzip -c"), stdin=c2.stdout, stdout=handle_3)
@@ -323,8 +323,8 @@ def concat_vcf(vcfs, output=tempfile.mkstemp(suffix=".vcf")[1]):
     """
     if vcfs:
         c = subprocess.Popen(
-            shsplit(f"bcftools concat -a {' '.join(vcfs)}"), stdout=subprocess.PIPE)
-        subprocess.call(shsplit(f"bcftools sort -o {output}"), stdin=c.stdout)
+            shsplit(f"bcftools concat -a {' '.join(vcfs)}"), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        subprocess.call(shsplit(f"bcftools sort -o {output}"), stdin=c.stdout, stdout=FNULL, stderr=subprocess.DEVNULL)
         # remove temp vcf files
         # for vcf in vcfs:
         #    os.remove(vcf)
