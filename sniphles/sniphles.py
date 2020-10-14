@@ -467,7 +467,7 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
     vcf.close()
     os.close(handle1); os.close(handle2)
     os.remove(rawvcf); os.remove(tmptxt)
-    for f in h1_vcf + h2_vcf + unph_vcf + hvcfs + hbams:
+    for f in [h1_vcf, h2_vcf, unph_vcf] + hvcfs + hbams:
         os.remove(f)
     return chromvcf
 
