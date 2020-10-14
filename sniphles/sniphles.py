@@ -92,8 +92,7 @@ class PhaseBlock(object):
                     support *= 2
                 try:
                     subprocess.check_output(shsplit(
-                        f"sniffles --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {support} -m {tmpbam} -v {tmppath}"),
-                        stderr=subprocess.STDOUT)
+                        f"sniffles --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {support} -m {tmpbam} -v {tmppath}"))
                 except subprocess.CalledProcessError as e:
                     eprint(f"Sniffles returned {e.returncode}")
                     self.vcfs[phase] = None
@@ -327,10 +326,11 @@ def concat_vcf(vcfs, output=tempfile.mkstemp(suffix=".vcf")[1]):
     if vcfs:
         c = subprocess.Popen(
             shsplit(f"bcftools concat -a {' '.join(vcfs)}"), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        subprocess.call(shsplit(f"bcftools sort -o {output}"), stdin=c.stdout, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.call(shsplit(
+            f"bcftools sort -o {output}"), stdin=c.stdout, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         # remove temp vcf files
-        # for vcf in vcfs:
-        #    os.remove(vcf)
+        for vcf in vcfs:
+            os.remove(vcf)
         return output
     else:
         return None
@@ -402,7 +402,8 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
     # do not estimate distance based on the size of SV
     # minimal size of SV >= 0 bp
     subprocess.call(shsplit(f"SURVIVOR merge {tmptxt} 1000 1 0 0 0 0 {mvcf}"))
-    os.close(handle1); os.close(handle2)
+    os.close(handle1)
+    os.close(handle2)
 
     # force calling on h1/2
     hvcfs = []
@@ -465,8 +466,10 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
                         form='GT',
                         sam=gt))
     vcf.close()
-    os.close(handle1); os.close(handle2)
-    os.remove(rawvcf); os.remove(tmptxt)
+    os.close(handle1)
+    os.close(handle2)
+    os.remove(rawvcf)
+    os.remove(tmptxt)
     for f in [h1_vcf, h2_vcf, unph_vcf] + hvcfs + hbams:
         os.remove(f)
     return chromvcf
