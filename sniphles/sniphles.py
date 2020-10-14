@@ -277,7 +277,7 @@ def sniffles(tmpdvcf, tmpbam, status, support=5):
 
     support: minimal number of supporting reads. Needs to be evaluated. For unphased regions, this number doubles.
     """
-    handle, tmppath = tempfile.mkstemp(prefix=tmpdvcf, suffix=".vcf")
+    handle_1, tmppath = tempfile.mkstemp(prefix=tmpdvcf, suffix=".vcf")
     # Used default values in sniffles to filter SVs based on homozygous or heterozygous allelic frequency (AF).
     # Will not attempt to remove calls based on the FILTER field in VCF, which only shows unresovled insertion length other than PASS.
     FNULL = open(os.devnull, 'w')
@@ -288,10 +288,11 @@ def sniffles(tmpdvcf, tmpbam, status, support=5):
         stdout=FNULL,
         stderr=subprocess.STDOUT)
     c = subprocess.Popen(shsplit(f"bcftools sort {tmppath}"), stdout=subprocess.PIPE)
-    handle, compressed_vcf = tempfile.mkstemp(suffix=".vcf.gz")
-    subprocess.call(shsplit("bgzip -c"), stdin=c.stdout, stdout=handle)
+    handle_2, compressed_vcf = tempfile.mkstemp(suffix=".vcf.gz")
+    subprocess.call(shsplit("bgzip -c"), stdin=c.stdout, stdout=handle_2)
     subprocess.call(shsplit(f"tabix {compressed_vcf}"))
-    os.close(handle)
+    os.close(handle_1)
+    os.close(handle_2)
     os.remove(tmppath)
     return compressed_vcf
 
