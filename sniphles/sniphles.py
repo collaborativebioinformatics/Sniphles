@@ -67,10 +67,10 @@ def main():
                     if tmpbam:
                         cov = get_coverage(tmpbam, block)
                         # XXX (Evaluation needed) Do not attempt to call SVs if coverage of phased block < 10
-                        if cov >= args.minimum_suport_read: 
+                        if cov >= args.minimum_suport_read:
                             tmpvcf = sniffles(tmpdvcf, tmpbam, block.status)
                             variant_files[phase].append(tmpvcf)
-                        else: ## TODO: # We should implemet some logic here
+                        else:  ## TODO: # We should implemet some logic here
                             pass
                         os.remove(tmpbam)
                         os.remove(tmpbam + '.bai')
@@ -102,7 +102,8 @@ def get_args():
                         help="Log file", dest='log_file', type=str,
                         default="sniphles.log")
     parser.add_argument("-s", "--minimum_suport_read",
-                        help="Minimum support read to call SV equals to -s in sniffles", dest='minimum_suport_read', type=int,
+                        help="Minimum support read to call SV equals to -s in sniffles", dest='minimum_suport_read',
+                        type=int,
                         default=4)
     return parser.parse_args()
 
@@ -174,15 +175,16 @@ def get_unphased_blocks(phase_blocks, chromosome_end_position, chromosome_id):
     """
 
     def compare_and_update_phased_blocks(previous, trailing):
-        if previous.start < trailing.start < previous.end:
-            previous.end = trailing.end  # merge these and extend the end of the phased block, disregards phases.
+        if previous.start <= trailing.start <= previous.end:
+            previous.end = max(previous.end,
+                               trailing.end)  # merge these and extend the end of the phased block, disregards phases.
             return previous
         else:
             return trailing
 
     phase_blocks = list(itertools.accumulate(phase_blocks, compare_and_update_phased_blocks))
 
-    start_positions = sorted([block.start for block in phase_blocks])
+    start_positions = sorted(list(set([block.start for block in phase_blocks])))
 
     unphased_intervals_starts = [0]
     unphased_intervals_ends = []
