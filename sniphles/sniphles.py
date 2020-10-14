@@ -333,7 +333,7 @@ def concat_vcf(vcfs, output=tempfile.mkstemp(suffix=".vcf")[1]):
             os.remove(vcf)
         return output
     else:
-        return None
+        assert False, "No input vcf for concat"
 
 
 def make_hap_bams(bam, chrom):
@@ -470,7 +470,7 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
     os.close(handle2)
     os.remove(rawvcf)
     os.remove(tmptxt)
-    for f in [h1_vcf, h2_vcf, unph_vcf] + hvcfs + hbams:
+    for i, f in enumerate([h1_vcf, h2_vcf, unph_vcf] + hvcfs + hbams):
         os.remove(f)
     return chromvcf
 
