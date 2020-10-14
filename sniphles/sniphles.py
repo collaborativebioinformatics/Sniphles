@@ -93,9 +93,7 @@ class PhaseBlock(object):
                     support *= 2
                 try:
                     subprocess.check_output(shsplit(
-                        f"sniffles --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {support} -m {tmpbam} -v {tmppath}"),
-                        stdout=FNULL,
-                        stderr=subprocess.STDOUT)
+                        f"sniffles --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {support} -m {tmpbam} -v {tmppath}"))
                 except subprocess.CalledProcessError as e:
                     eprint(f"Sniffles returned {e.returncode}")
                     self.vcfs[phase] = None
