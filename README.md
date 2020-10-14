@@ -35,7 +35,7 @@ Sniphles is implemented in Python 3, it takes a haplotype Bam file as input and 
 
 # How to use <this software>
 
-_Simply:_
+**_Simply:_**
 `sinphles -b foo.bam -v output.vcf -n sample_name`
 
 ```
