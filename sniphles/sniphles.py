@@ -88,7 +88,6 @@ class PhaseBlock(object):
                 handle_1, tmppath = tempfile.mkstemp(suffix=".vcf")
                 # Used default values in sniffles to filter SVs based on homozygous or heterozygous allelic frequency (AF).
                 # Will not attempt to remove calls based on the FILTER field in VCF, which only shows unresovled insertion length other than PASS.
-                FNULL = open(os.devnull, 'w')
                 if self.status == "unphased":
                     support *= 2
                 try:
@@ -104,7 +103,7 @@ class PhaseBlock(object):
                 c1 = subprocess.Popen(
                     shsplit(f"bcftools reheader -s {tmpsamp} {tmppath}"), stdout=subprocess.PIPE)
                 c2 = subprocess.Popen(shsplit(f"bcftools sort"),
-                                      stdin=c1.stdout, stdout=subprocess.PIPE)
+                                      stdin=c1.stdout, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
                 handle_3, compressed_vcf = tempfile.mkstemp(prefix=self.__repr__(),
                                                             suffix=".vcf.gz")
                 subprocess.call(shsplit("bgzip -c"), stdin=c2.stdout, stdout=handle_3)
@@ -326,8 +325,9 @@ def concat_vcf(vcfs, output=tempfile.mkstemp(suffix=".vcf")[1]):
     """
     if vcfs:
         c = subprocess.Popen(
-            shsplit(f"bcftools concat -a {' '.join(vcfs)}"), stdout=subprocess.PIPE)
-        subprocess.call(shsplit(f"bcftools sort -o {output}"), stdin=c.stdout)
+            shsplit(f"bcftools concat -a {' '.join(vcfs)}"), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        subprocess.call(shsplit(
+            f"bcftools sort -o {output}"), stdin=c.stdout, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         # remove temp vcf files
         for vcf in vcfs:
             os.remove(vcf)
@@ -402,7 +402,8 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
     # do not estimate distance based on the size of SV
     # minimal size of SV >= 0 bp
     subprocess.call(shsplit(f"SURVIVOR merge {tmptxt} 1000 1 0 0 0 0 {mvcf}"))
-    os.close(handle1); os.close(handle2)
+    os.close(handle1)
+    os.close(handle2)
 
     # force calling on h1/2
     hvcfs = []
@@ -465,8 +466,10 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
                         form='GT',
                         sam=gt))
     vcf.close()
-    os.close(handle1); os.close(handle2)
-    os.remove(rawvcf); os.remove(tmptxt)
+    os.close(handle1)
+    os.close(handle2)
+    os.remove(rawvcf)
+    os.remove(tmptxt)
     for f in h1_vcf + h2_vcf + unph_vcf + hvcfs + hbams:
         os.remove(f)
     return chromvcf
