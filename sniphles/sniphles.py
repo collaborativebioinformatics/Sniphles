@@ -246,6 +246,7 @@ def make_bams(bam, block):
                 tmpbam.write(read)
                 reads_in_block += 1
         else:
+            phase = int(phase)
             for read in bam.fetch(contig=block.chrom, start=block.start, end=block.end):
                 if read.has_tag('HP') and read.get_tag('HP') == phase:
                     tmpbam.write(read)
