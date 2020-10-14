@@ -25,7 +25,7 @@ Overview Diagram
 
 # Software Workflow Diagram
 
-![workflow](./plots/Sniphles.png)
+![Sniphles](./plots/Sniphles.png)
 
 
 
@@ -35,7 +35,7 @@ Sniphles is implemented in Python 3, it takes a haplotype Bam file as input and 
 
 # How to use <this software>
 
-
+_Simply:_
 `sinphles -b foo.bam -v output.vcf -n sample_name`
 
 ```
