@@ -313,7 +313,7 @@ def concat_vcf(vcfs, output=tempfile.mkstemp(suffix=".vcf")[1]):
     if vcfs:
         c = subprocess.Popen(
             shsplit(f"bcftools concat -a {' '.join(vcfs)}"), stdout=subprocess.PIPE)
-        subprocess.call(shsplit(f"bcftools sort -o {output}", stdin=c.stdout))
+        subprocess.call(shsplit(f"bcftools sort -o {output}"), stdin=c.stdout)
         # remove temp vcf files
         for vcf in vcfs:
             os.remove(vcf)
