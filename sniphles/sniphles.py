@@ -106,7 +106,8 @@ def get_args():
                         help="Log file", dest='log_file', type=str,
                         default="sniphles.log")
     parser.add_argument("-s", "--minimum_suport_read",
-                        help="Minimum support read to call SV equals to -s in sniffles", dest='minimum_suport_read',
+                        help="Minimum support read to call SV equals to -s in sniffles",
+                        dest='minimum_suport_read',
                         type=int,
                         default=4)
     return parser.parse_args()
@@ -285,7 +286,9 @@ def sniffles(tmpdvcf, tmpbam, status, support=5):
     [x] implementation done
     [ ] test done
 
-    support: minimal number of supporting reads. Needs to be evaluated. For unphased regions, this number doubles.
+    support: minimal number of supporting reads.
+    Needs to be evaluated.
+    For unphased regions, this number doubles.
     """
     handle_1, tmppath = tempfile.mkstemp(prefix=tmpdvcf, suffix=".vcf")
     # Used default values in sniffles to filter SVs based on homozygous or heterozygous allelic frequency (AF).
