@@ -91,7 +91,7 @@ def update_vcf(args):
                 #Binary number,00,01,02
                 #4)Calculate ratio for HET.Count of 1's/Total=HP_SV_READ_RATIO_1.Count of 2's/Total=HP_SV_READ_RATIO_2.YES
                 if line_split[-1].split(":", 1)[0] == "1/1" or line_split[-1].split(":", 1)[0] == "0/0" or line_split[-1].split(":", 1)[0] == "./.":  # no gt to phase
-                    reads = [i for i in line_split[7].split(";")  if i.startswith("RNAMES")][0].split("=",1)[-1].split(",")                  
+                    reads = [i for i in line_split[7].split(";")  if i.startswith("RNAMES")][0].split("=",1)[-1].split(",")
                     myvalues = list(map(hp_dic.get, reads))
                     if any(myvalues): # any value is not none
                         ps_dict = categorize_ps(myvalues)
@@ -109,6 +109,7 @@ def update_vcf(args):
                         ps_dict = categorize_ps(myvalues)
                         if 0 in list(ps_dict.values()): # means that the hp is conflicting do not update anything and add flag that is is conflicting
                             ratios = collect_ratios(myvalues)
+                            ratios=",".join(ratios)
                             line_split[7] = "{info};CONFLICT={conflict};HP_RATIO={hp_ratio}".format(info=line_split[7], conflict=1, hp_ratio=ratios)
 
                             line_split[-2] = "{}:{}".format(line_split[-2], "PS")
