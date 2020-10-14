@@ -441,7 +441,7 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
                         gt = ph_gt_to_str[v.gt_types[0]][v.gt_types[1]]
             else:
                 if v.gt_types[0] != 3 or v.gt_types[1] != 3:
-                    assert False, "duplicate calls from phased and unphased regions"
+                    continue # XXX revisit "duplicate calls from phased and unphased regions" later
                 else:  # if unphased, HOM and HET are both valid
                     if v.gt_types[2] == 0:  # not a variant
                         eprint(f"{v.ID} w/ gt {v.gt_types} removed due to no variant")
