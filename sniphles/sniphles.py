@@ -389,8 +389,8 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
     # Also think about removing the VCFs, hbams
 
     # merging h1/2
-    _, tmptxt = tempfile.mkstemp(suffix=".txt")
-    _, mvcf = tempfile.mkstemp(suffix=".vcf")
+    handle1, tmptxt = tempfile.mkstemp(suffix=".txt")
+    handle2, mvcf = tempfile.mkstemp(suffix=".vcf")
     np.savetxt(tmptxt, h1_vcf + h2_vcf, fmt='%s')
     # Parameters explained:
     # maximum allowed distance btwn SVs < 1000 bp
@@ -399,6 +399,7 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
     # do not estimate distance based on the size of SV
     # minimal size of SV >= 0 bp
     subprocess.call(shsplit(f"SURVIVOR merge {tmptxt} 1000 1 0 0 0 0 {mvcf}"))
+    os.close(handle1); os.close(handle2)
 
     # force calling on h1/2
     hvcfs = []
@@ -409,9 +410,8 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
     os.remove(mvcf)
 
     # merging w/ unph_vcf
-    handle1, tmptxt = tempfile.mkstemp(suffix=".txt")
-    handle2, rawvcf = tempfile.mkstemp(suffix=".vcf")
-    handle3, chromvcf = tempfile.mkstemp(suffix=".vcf")
+    handle1, rawvcf = tempfile.mkstemp(suffix=".vcf")
+    handle2, chromvcf = tempfile.mkstemp(suffix=".vcf")
     np.savetxt(tmptxt, hvcfs + unph_vcf, fmt='%s')
     subprocess.call(shsplit(f"SURVIVOR merge {tmptxt} 10 1 0 0 0 0 {rawvcf}"))
     # XXX 2,3 swapped compared to @wouter haplomerge.py
@@ -462,7 +462,7 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
                         form='GT',
                         sam=gt))
     vcf.close()
-    os.close(handle1); os.close(handle2); os.close(handle3)
+    os.close(handle1); os.close(handle2)
     os.remove(rawvcf); os.remove(tmptxt)
     for f in h1_vcf + h2_vcf + unph_vcf + hvcfs + hbams:
         os.remove(f)
