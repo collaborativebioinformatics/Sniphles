@@ -97,7 +97,6 @@ def update_vcf(args):
                         ps_dict = categorize_ps(myvalues)
                         if 0 in list(ps_dict.values()): # means that the hp is conflicting do not update anything and add flag that is is conflicting
                             ratios = collect_ratios(myvalues)
-                            ratios = ",".join(ratios)
                             line_split[7] = "{info};CONFLICT={conflict};HP_RATIO={hp_ratio}".format(info=line_split[7], conflict=0, hp_ratio=ratios)
                             line_split[-2] = "{}:{}".format(line_split[-2], "PS")
                             line_split[-1] = "{}:{}".format(line_split[-1], "-1")
@@ -110,7 +109,6 @@ def update_vcf(args):
                         ps_dict = categorize_ps(myvalues)
                         if 0 in list(ps_dict.values()): # means that the hp is conflicting do not update anything and add flag that is is conflicting
                             ratios = collect_ratios(myvalues)
-                            ratios=",".join(ratios)
                             line_split[7] = "{info};CONFLICT={conflict};HP_RATIO={hp_ratio}".format(info=line_split[7], conflict=1, hp_ratio=ratios)
 
                             line_split[-2] = "{}:{}".format(line_split[-2], "PS")
@@ -131,7 +129,7 @@ def update_vcf(args):
                             line_split[-1] = "{}:{}".format(hp_new_value, ",".join(ps_dict.keys()))
                             data_out.write("{}\n".format("\t".join(line_split)))
                     else: # all are none
-                        ratios=0,0,0
+                        ratios="0,0,0"
                         line_split[7] = "{info};CONFLICT=2;HP_RATIO={hp_ratio}".format(info=line_split[7], conflict=1, hp_ratio=ratios)
                         line_split[-2] = "{}:{}".format(line_split[-2], "PS")
                         line_split[-1] = "{}:{}".format(line_split[-1], "-1")
@@ -178,7 +176,7 @@ def collect_ratios(myvalues):
                 count_of_2s+=1
         else:
             count_of_None=+1
-        collected_ratios = count_of_1s,count_of_2s,count_of_None
+        collected_ratios = str(count_of_1s)+","+str(count_of_2s)+","+str(count_of_None)
     return collected_ratios
 
 def main():
