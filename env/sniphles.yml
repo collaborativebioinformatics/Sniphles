@@ -1,0 +1,11 @@
+name: sniphles
+channels:
+  - bioconda
+dependencies:
+  - pysam
+  - numpy
+  - cyvcf2
+  - mosdepth
+  - sniffles
+  - bcftools
+  - survivor

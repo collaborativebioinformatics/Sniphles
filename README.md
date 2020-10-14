@@ -48,11 +48,25 @@ Sniphles is implemented in Python 3, it takes a haplotype Bam file as input and 
 
 # Installation options:
 
-### Installing <this software> from Github using Python.
+### Installing <this software> from Github using Anaconda3.
+
+Due to dependencies the easiest way to install is using Anaconda3.
 
 1. `git clone https://github.com/collaborativebioinformatics/Sniphles.git`
 2. `cd <repository-folder-path>`
-3. `python setup.py install`
+3. `conda env create -f env/sniphles.yml`
+4. `conda activate sniphles`
+
+Alternatively make sure to have the following packages installed:
+
+  - Python >= 3.6
+  - pysam
+  - numpy
+  - [cyvcf2](https://github.com/brentp/cyvcf2)
+  - [mosdepth](https://github.com/brentp/mosdepth)
+  - [sniffles](https://github.com/fritzsedlazeck/Sniffles)
+  - [bcftools](http://samtools.github.io/bcftools/bcftools.html)
+  - [survivor](https://github.com/fritzsedlazeck/SURVIVOR)
 
 # Testing
 
