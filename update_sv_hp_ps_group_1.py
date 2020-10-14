@@ -97,6 +97,7 @@ def update_vcf(args):
                         ps_dict = categorize_ps(myvalues)
                         if 0 in list(ps_dict.values()): # means that the hp is conflicting do not update anything and add flag that is is conflicting
                             ratios = collect_ratios(myvalues)
+                            ratios=“,”.join(ratios)
                             line_split[7] = "{info};CONFLICT={conflict};HP_RATIO={hp_ratio}".format(info=line_split[7], conflict=0, hp_ratio=ratios)
                             line_split[-2] = "{}:{}".format(line_split[-2], "PS")
                             line_split[-1] = "{}:{}".format(line_split[-1], "-1")
