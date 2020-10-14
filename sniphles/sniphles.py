@@ -73,9 +73,13 @@ def main():
                         variant_files[phase].append(tmpvcf)
                         os.remove(tmpbam)
                         os.remove(tmpbam + '.bai')
+            eprint(f"Concatenating VCFs of {chrom}, haplotype 1")
             h1_vcf = concat_vcf(variant_files['1'])
+            eprint(f"Concatenating VCFs of {chrom}, haplotype 2")
             h2_vcf = concat_vcf(variant_files['2'])
+            eprint(f"Concatenating VCFs of {chrom}, unphased")
             unph_vcf = concat_vcf(variant_files['u'])
+            eprint(f"Merging haplotypes for {chrom}")
             hbams = make_hap_bams(bam, chrom)
             chrom_vcf = merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf,
                                          args.vcf)  # TODO: DOESN'T RETURN
