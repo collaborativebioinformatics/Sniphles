@@ -441,8 +441,8 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
         f.write("\n".join(make_header(vcf)) + "\n")
         for v in vcf:
             if v.gt_types[2] == 3:  # gt ordered by h1_vcf/h2_vcf/unphased_vcf
-                if v.gt_types[0] == 3 or v.gt_types[1] == 3: # at least one SV call in phased region is missing
-                    if v.gt_types[0] != 2 and v.gt_types[1] != 2: # HET|unkown SV call in phased region
+                if v.gt_types[0] == 3 or v.gt_types[1] == 3:  # at least one SV call in phased region is missing
+                    if v.gt_types[0] != 2 and v.gt_types[1] != 2:  # HET|unkown SV call in phased region
                         gt = "1/0"
                     else:
                         gt = "1|1"
@@ -458,7 +458,7 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
                         gt = ph_gt_to_str[v.gt_types[0]][v.gt_types[1]]
             else:
                 if v.gt_types[0] != 3 or v.gt_types[1] != 3:
-                    continue # XXX revisit "duplicate calls from phased and unphased regions" later
+                    continue  # XXX revisit "duplicate calls from phased and unphased regions" later
                 else:  # if unphased, HOM and HET are both valid
                     if v.gt_types[2] == 0:  # not a variant
                         eprint(f"{v.ID} w/ gt {v.gt_types} removed due to no variant")
@@ -489,7 +489,10 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
     os.remove(tmptxt)
     for f in [h1_vcf, h2_vcf, unph_vcf] + hvcfs:
         os.remove(f)
-    return chromvcf
+    handle_3, compressed_vcf = tempfile.mkstemp(suffix=".vcf.gz")
+    subprocess.call(shsplit(f"bgzip -c {chromvcf}"), stdout=handle_3)
+    subprocess.call(shsplit(f"tabix {compressed_vcf}"))
+    return compressed_vcf
 
 
 if __name__ == '__main__':
