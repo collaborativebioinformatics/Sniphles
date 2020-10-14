@@ -126,14 +126,14 @@ def check_phase_blocks(bam, chromosome):
             coordinate_dict[read.get_tag('PS')].extend([read.reference_start, read.reference_end])
     phase_blocks = []
     for block_identifier in phase_dict.keys():
-        if 1 in phase_dict[block_identifier] and 2 in phase_dict[block_identifier]:
+        if '1' in phase_dict[block_identifier] and '2' in phase_dict[block_identifier]:
             phase_blocks.append(
                 PhaseBlock(
                     id=block_identifier,
                     chrom=chromosome,
                     start=np.amin(coordinate_dict[block_identifier]),
                     end=np.amax(coordinate_dict[block_identifier]),
-                    phase=[1, 2],
+                    phase=['1', '2'],
                     status='biphasic')
             )
         else:
