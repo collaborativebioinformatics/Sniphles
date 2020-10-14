@@ -3,3 +3,4 @@ __pycache__*
 build*
 dist*
 sniphles.egg-info*
+.remote-sync.json
