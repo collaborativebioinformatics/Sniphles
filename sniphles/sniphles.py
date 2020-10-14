@@ -88,13 +88,11 @@ class PhaseBlock(object):
                 handle_1, tmppath = tempfile.mkstemp(suffix=".vcf")
                 # Used default values in sniffles to filter SVs based on homozygous or heterozygous allelic frequency (AF).
                 # Will not attempt to remove calls based on the FILTER field in VCF, which only shows unresovled insertion length other than PASS.
-                FNULL = open(os.devnull, 'w')
                 if self.status == "unphased":
                     support *= 2
                 try:
                     subprocess.check_output(shsplit(
                         f"sniffles --genotype --min_homo_af 0.8 --min_het_af 0.3 -s {support} -m {tmpbam} -v {tmppath}"),
-                        stdout=FNULL,
                         stderr=subprocess.STDOUT)
                 except subprocess.CalledProcessError as e:
                     eprint(f"Sniffles returned {e.returncode}")
@@ -329,7 +327,7 @@ def concat_vcf(vcfs, output=tempfile.mkstemp(suffix=".vcf")[1]):
     if vcfs:
         c = subprocess.Popen(
             shsplit(f"bcftools concat -a {' '.join(vcfs)}"), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        subprocess.call(shsplit(f"bcftools sort -o {output}"), stdin=c.stdout, stdout=FNULL, stderr=subprocess.DEVNULL)
+        subprocess.call(shsplit(f"bcftools sort -o {output}"), stdin=c.stdout, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         # remove temp vcf files
         # for vcf in vcfs:
         #    os.remove(vcf)
