@@ -156,8 +156,7 @@ def main():
             unph_vcf = concat_vcf([ph.vcfs['u'] for ph in phase_blocks if ph.vcfs['u']])
             eprint(f"Merging haplotypes for {chrom}")
             hbams = make_hap_bams(bam, chrom)
-            chrom_vcf = merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf,
-                                         args.vcf)  # TODO: DOESN'T RETURN
+            chrom_vcf = merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf)
             vcfs_per_chromosome.append(chrom_vcf)
     concat_vcf(vcfs_per_chromosome, output=args.vcf)
 
@@ -382,7 +381,7 @@ def make_header(vcf, name="SAMPLE"):
     return header
 
 
-def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf, output_file):
+def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
     """
     [x] implementation done
     [ ] test done
@@ -410,8 +409,9 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf, output_file):
     os.remove(mvcf)
 
     # merging w/ unph_vcf
-    _, tmptxt = tempfile.mkstemp(suffix=".txt")
-    _, rawvcf = tempfile.mkstemp(suffix=".vcf")
+    handle1, tmptxt = tempfile.mkstemp(suffix=".txt")
+    handle2, rawvcf = tempfile.mkstemp(suffix=".vcf")
+    handle3, chromvcf = tempfile.mkstemp(suffix=".vcf")
     np.savetxt(tmptxt, hvcfs + unph_vcf, fmt='%s')
     subprocess.call(shsplit(f"SURVIVOR merge {tmptxt} 10 1 0 0 0 0 {rawvcf}"))
     # XXX 2,3 swapped compared to @wouter haplomerge.py
@@ -419,8 +419,8 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf, output_file):
     unph_gt_to_str = {1: "1/0", 2: "1/1"}
     ph_gt_to_str = {0: {2: "0|1"}, 2: {0: "1|0", 2: "1|1"}}
     vcf = VCF(rawvcf)
-    with open(output_file, 'w') as f:
-        f.write("\n".join(make_header(vcf)))
+    with open(chromvcf, 'w') as f:
+        f.write("\n".join(make_header(vcf)) + "\n")
         for v in vcf:
             if v.gt_types[2] == 3:  # gt ordered by h1_vcf/h2_vcf/unphased_vcf
                 if v.gt_types[0] == 3 or v.gt_types[1] == 3:
@@ -462,11 +462,11 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf, output_file):
                         form='GT',
                         sam=gt))
     vcf.close()
-    os.remove(rawvcf)
-    os.remove(tmptxt)
-
+    os.close(handle1); os.close(handle2); os.close(handle3)
+    os.remove(rawvcf); os.remove(tmptxt)
     for f in h1_vcf + h2_vcf + unph_vcf + hvcfs + hbams:
         os.remove(f)
+    return chromvcf
 
 
 if __name__ == '__main__':
