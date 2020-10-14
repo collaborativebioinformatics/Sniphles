@@ -24,6 +24,8 @@ class PhaseBlock(object):
         self.chrom = chrom
         self.start = start  # first coordinate of a read in the phase block
         self.end = end  # last coordinate of a read in the phase block
+        assert isinstance(phase[0], str), "Phase should be a string!"
+        assert isinstance(phase[0], str), "Phase should be a string!"
         self.phase = phase  # List with 1 and/or 2
         self.status = status  # biphasic, monophasic, unphased
 
