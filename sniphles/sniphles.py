@@ -344,6 +344,10 @@ def make_hap_bams(bam, chrom):
 
 
 def make_header(vcf, name="SAMPLE"):
+    """
+    [x] implementation done
+    [ ] test done
+    """
     header = ['##fileformat=VCFv4.1', '##source=sniphles']
     for line in vcf.header_iter():
         if line["HeaderType"] == 'CONTIG':
@@ -365,7 +369,7 @@ def make_header(vcf, name="SAMPLE"):
 
 def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf, output_file):
     """
-    [ ] implementation done
+    [x] implementation done
     [ ] test done
     """
     # Also think about removing the VCFs, hbams
