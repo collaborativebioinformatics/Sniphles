@@ -391,7 +391,7 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
     # merging h1/2
     handle1, tmptxt = tempfile.mkstemp(suffix=".txt")
     handle2, mvcf = tempfile.mkstemp(suffix=".vcf")
-    np.savetxt(tmptxt, h1_vcf + h2_vcf, fmt='%s')
+    np.savetxt(tmptxt, [h1_vcf + h2_vcf], fmt='%s')
     # Parameters explained:
     # maximum allowed distance btwn SVs < 1000 bp
     # do not remove SV even if types are different e.g. INS in h1, DEL in h2
@@ -412,13 +412,13 @@ def merge_haplotypes(hbams, h1_vcf, h2_vcf, unph_vcf):
     # merging w/ unph_vcf
     handle1, rawvcf = tempfile.mkstemp(suffix=".vcf")
     handle2, chromvcf = tempfile.mkstemp(suffix=".vcf")
-    np.savetxt(tmptxt, hvcfs + unph_vcf, fmt='%s')
+    np.savetxt(tmptxt, hvcfs + [unph_vcf], fmt='%s')
     subprocess.call(shsplit(f"SURVIVOR merge {tmptxt} 10 1 0 0 0 0 {rawvcf}"))
     # XXX 2,3 swapped compared to @wouter haplomerge.py
     allele_dict = {0: 'HOM_REF', 1: 'HET', 2: 'HOM_ALT', 3: 'UNKNOWN'}
     unph_gt_to_str = {1: "1/0", 2: "1/1"}
     ph_gt_to_str = {0: {2: "0|1"}, 2: {0: "1|0", 2: "1|1"}}
-    vcf = VCF(rawvcf)
+    vcf = VCF(rawvcf, gts012=True)
     with open(chromvcf, 'w') as f:
         f.write("\n".join(make_header(vcf)) + "\n")
         for v in vcf:
